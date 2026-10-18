@@ -1,0 +1,23 @@
+{
+  "repository": "https://github.com/jamrodrigues/eco.git",
+  "branches": {
+    "main": {
+      "description": "Core White-Label Genérico Reutilizável (Estilo Shopee Desktop & Mobile)",
+      "banners": {
+        "hero_main_1": "/images/shopee-assets/banners/hero-main-01.jpg"
+      },
+      "products": {
+        "anchor_product_1": "/images/shopee-assets/products/prod-01-main.jpg"
+      }
+    },
+    "brand/vruumoto": {
+      "description": "Customização Vruumoto - Peças e Acessórios de Moto",
+      "banners": {
+        "hero_vruumoto_1": "/images/vruumoto-assets/banners/hero-vruumoto-01.jpg"
+      },
+      "products": {
+        "kit_relacao_freio_1": "/images/vruumoto-assets/products/kit-relacao-freio-01.jpg"
+      }
+    }
+  }
+}

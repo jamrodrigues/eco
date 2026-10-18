@@ -1,0 +1,1404 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Simulador do Funil de Compra da Shopee Brasil</title>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background-color: #F5F5F5;
+      color: #222222;
+    }
+    .shopee-orange { color: #EE4D2D; }
+    .bg-shopee-orange { background-color: #EE4D2D; }
+    .border-shopee-orange { border-color: #EE4D2D; }
+    .bg-shopee-light { background-color: rgba(255, 87, 34, 0.08); }
+    .shopee-header-gradient {
+      background: linear-gradient(-180deg, #F53D2D, #FF6633);
+    }
+    .check-triangle::after {
+      content: "";
+      position: absolute;
+      right: 0;
+      bottom: 0;
+      border: 4px solid transparent;
+      border-right: 4px solid #EE4D2D;
+      border-bottom: 4px solid #EE4D2D;
+    }
+    .postal-border {
+      background-image: repeating-linear-gradient(45deg, #6FA6D6, #6FA6D6 33px, transparent 0, transparent 41px, #F18D9B 0, #F18D9B 74px, transparent 0, transparent 82px);
+      height: 3px;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+  <!-- TOP HEADER NOTIFICATION BAR & MAIN HEADER -->
+  <header class="shopee-header-gradient text-white sticky top-0 z-50 shadow-md">
+    <div class="max-w-6xl mx-auto px-4 py-1.5 flex justify-between items-center text-xs opacity-90">
+      <div class="flex space-x-4">
+        <span>Central do Vendedor</span>
+        <span>Vender na Shopee</span>
+        <span>Baixe o App</span>
+      </div>
+      <div class="flex space-x-4 items-center">
+        <span>Notificações</span>
+        <span>Ajuda</span>
+        <span>Português (BR)</span>
+        <span class="font-semibold cursor-pointer" id="nav-user-label">Olá, Comprador</span>
+      </div>
+    </div>
+    
+    <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
+      
+      <!-- Device Viewport Toggle (Desktop vs Mobile) -->
+      <div class="flex items-center space-x-1 bg-black/25 p-1 rounded-full text-xs font-bold">
+        <button id="toggle-view-desktop" class="px-2.5 py-0.5 rounded-full bg-white text-orange-600 transition shadow-sm">💻 Desktop</button>
+        <button id="toggle-view-mobile" class="px-2.5 py-0.5 rounded-full text-white/90 hover:bg-white/20 transition">📱 Mobile (375px)</button>
+      </div>
+
+      <div class="flex items-center space-x-3 cursor-pointer" id="btn-header-home">
+        <!-- Shopee Bag Logo -->
+        <svg class="w-9 h-9 fill-current text-white" viewBox="0 0 40 40">
+          <path d="M20 4a6 6 0 00-6 6v2H8a2 2 0 00-2 2v20a2 2 0 002 2h24a2 2 0 002-2V14a2 2 0 00-2-2h-6v-2a6 6 0 00-6-6zm-4 6a4 4 0 118 0v2h-8v-2zm-6 4h20v18H10V14zm10 4a3 3 0 100 6 3 3 0 000-6z"/>
+        </svg>
+        <span class="text-2xl font-bold tracking-tight">Shopee</span>
+        <span class="text-xs bg-white text-orange-600 px-2 py-0.5 rounded font-bold uppercase tracking-wider ml-1" id="header-stage-badge">Página do Produto</span>
+      </div>
+
+      <!-- Navigation Steps Indicator -->
+      <div class="flex items-center space-x-2 bg-black/15 px-3 py-1.5 rounded-full text-xs font-medium"><button id="step-btn-home" class="px-2.5 py-1 rounded-full text-white hover:bg-white/20 transition">Home</button><span>&rarr;</span><button id="step-btn-login" class="px-2.5 py-1 rounded-full text-white hover:bg-white/20 transition">Login</button><span>&rarr;</span>
+        <button id="step-btn-pdp" class="px-2.5 py-1 rounded-full bg-white text-orange-600 font-bold transition">1. PDP</button>
+        <span>&rarr;</span>
+        <button id="step-btn-cart" class="px-2.5 py-1 rounded-full text-white hover:bg-white/20 transition">2. Carrinho (<span id="header-cart-count">1</span>)</button>
+        <span>&rarr;</span>
+        <button id="step-btn-checkout" class="px-2.5 py-1 rounded-full text-white hover:bg-white/20 transition">3. Checkout</button>
+        <span>&rarr;</span>
+        <button id="step-btn-order" class="px-2.5 py-1 rounded-full text-white hover:bg-white/20 transition">4. Pedido</button>
+      </div>
+
+      <!-- Cart Icon Action -->
+      <div class="relative cursor-pointer" id="btn-open-cart">
+        <svg class="w-7 h-7 fill-current" viewBox="0 0 24 24">
+          <path d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96 0 1.1.9 2 2 2h12v-2H7.42c-.14 0-.25-.11-.25-.25l.03-.12.9-1.63h7.45c.75 0 1.41-.41 1.75-1.03l3.58-6.49c.08-.14.12-.31.12-.48 0-.55-.45-1-1-1H5.21l-.94-2H1zm16 16c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2z"/>
+        </svg>
+        <span id="badge-cart-qty" class="absolute -top-1 -right-2 bg-white text-orange-600 text-[11px] font-extrabold px-1.5 py-0.2 rounded-full border border-orange-600 shadow">1</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN APP CONTAINER -->
+  <main class="max-w-6xl w-full mx-auto p-4 flex-1">
+
+    
+    
+    <!-- VIEW HOME: HOMEPAGE (shopee.com.br) -->
+    <section id="view-home" class="hidden flex flex-col space-y-4">
+      
+      <!-- Mobile/Desktop Search & Actions Bar on Homepage -->
+      <div class="bg-white p-3 rounded shadow-sm border border-gray-100 flex items-center space-x-2">
+        <div class="flex-1 bg-gray-100 rounded-full flex items-center px-3 py-1.5 text-xs text-gray-500">
+          <span class="mr-2 text-gray-400">🔍</span>
+          <span class="flex-1 truncate">Buscar na Shopee... (ex: Vestido Lovito)</span>
+          <span class="text-orange-600 font-bold ml-1 cursor-pointer" title="Busca Visual por Foto">📷</span>
+        </div>
+        <div class="flex items-center space-x-2 text-gray-600 text-xs font-medium">
+          <span class="cursor-pointer" id="home-chat-trigger" title="Chat com Vendedores">💬</span>
+          <span class="cursor-pointer" id="home-cart-trigger" title="Ir para Carrinho">🛒</span>
+        </div>
+      </div>
+
+      <!-- Hero Banner (Full-bleed touch carrossel on mobile, split on desktop) -->
+      <div class="relative w-full aspect-[2.4/1] bg-gradient-to-r from-orange-600 to-red-600 rounded-lg overflow-hidden shadow text-white flex items-center justify-between p-6">
+        <div class="flex flex-col space-y-1">
+          <span class="bg-white/20 text-white text-[10px] font-extrabold px-2 py-0.5 rounded-full uppercase tracking-wider w-max">Datas Duplas Shopee</span>
+          <h2 class="text-xl md:text-2xl font-black">Frete Grátis Sem Mínimo</h2>
+          <p class="text-xs text-orange-100">Milhões de cupons de até R$ 50 OFF liberados hoje!</p>
+        </div>
+        <div class="text-right">
+          <span class="bg-yellow-400 text-orange-950 font-black text-xs px-3 py-1.5 rounded-full shadow-lg animate-bounce inline-block">PEGAR CUPOM</span>
+        </div>
+        <!-- Dots pagination -->
+        <div class="absolute bottom-2 left-0 right-0 flex justify-center space-x-1.5">
+          <span class="w-4 h-1 bg-white rounded-full"></span>
+          <span class="w-1.5 h-1 bg-white/40 rounded-full"></span>
+          <span class="w-1.5 h-1 bg-white/40 rounded-full"></span>
+          <span class="w-1.5 h-1 bg-white/40 rounded-full"></span>
+        </div>
+      </div>
+
+      <!-- Quick Services Horizontal Scroll (Mobile & Desktop) -->
+      <div class="bg-white p-3 rounded shadow-sm border border-gray-100 flex justify-around items-center text-center text-[11px] text-gray-700 overflow-x-auto">
+        <div class="flex flex-col items-center space-y-1 cursor-pointer">
+          <span class="w-10 h-10 bg-yellow-100 rounded-full flex items-center justify-center text-lg">🪙</span>
+          <span class="font-bold">Moedas</span>
+        </div>
+        <div class="flex flex-col items-center space-y-1 cursor-pointer">
+          <span class="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center text-lg">🎫</span>
+          <span class="font-bold">Cupons</span>
+        </div>
+        <div class="flex flex-col items-center space-y-1 cursor-pointer">
+          <span class="w-10 h-10 bg-teal-100 rounded-full flex items-center justify-center text-lg">🚚</span>
+          <span class="font-bold">Frete Grátis</span>
+        </div>
+        <div class="flex flex-col items-center space-y-1 cursor-pointer">
+          <span class="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center text-lg">⚡</span>
+          <span class="font-bold">Relâmpago</span>
+        </div>
+        <div class="flex flex-col items-center space-y-1 cursor-pointer">
+          <span class="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center text-lg">🛍️</span>
+          <span class="font-bold">Oficial</span>
+        </div>
+      </div>
+
+      <!-- Flash Sale Section (Ofertas Relâmpago) -->
+      <div class="bg-white p-4 rounded shadow-sm border border-gray-100 flex flex-col space-y-3">
+        <div class="flex items-center justify-between border-b border-gray-100 pb-2">
+          <div class="flex items-center space-x-2">
+            <span class="text-orange-600 font-black text-sm">⚡ OFERTAS RELÂMPAGO</span>
+            <div class="flex space-x-1 text-[11px] font-bold text-white">
+              <span class="bg-black px-1.5 py-0.5 rounded">02</span>
+              <span class="text-black">:</span>
+              <span class="bg-black px-1.5 py-0.5 rounded">14</span>
+              <span class="text-black">:</span>
+              <span class="bg-black px-1.5 py-0.5 rounded">58</span>
+            </div>
+          </div>
+          <span class="text-xs text-orange-600 font-bold cursor-pointer">Ver Tudo &gt;</span>
+        </div>
+
+        <!-- Horizontal Flash Products -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <div class="border border-gray-100 rounded p-2 flex flex-col items-center text-center cursor-pointer hover:border-orange-500 transition" id="home-flash-product-card">
+            <div class="w-full aspect-square bg-orange-50 rounded flex items-center justify-center text-orange-600 font-bold text-xs relative">
+              Vestido Lovito
+              <span class="absolute top-1 right-1 bg-yellow-400 text-orange-950 text-[9px] font-black px-1 rounded">-40%</span>
+            </div>
+            <div class="text-sm font-extrabold text-orange-600 mt-2">R$ 53,94</div>
+            <div class="w-full bg-orange-100 h-3 rounded-full mt-1.5 overflow-hidden relative flex items-center justify-center">
+              <div class="bg-gradient-to-r from-orange-400 to-red-500 h-full w-[82%] absolute left-0"></div>
+              <span class="text-[8px] font-black text-white relative z-10 uppercase tracking-tighter">🔥 102 VENDIDOS</span>
+            </div>
+          </div>
+
+          <div class="border border-gray-100 rounded p-2 flex flex-col items-center text-center">
+            <div class="w-full aspect-square bg-gray-50 rounded flex items-center justify-center text-gray-500 font-bold text-xs relative">
+              Fone TWS
+              <span class="absolute top-1 right-1 bg-yellow-400 text-orange-950 text-[9px] font-black px-1 rounded">-65%</span>
+            </div>
+            <div class="text-sm font-extrabold text-orange-600 mt-2">R$ 29,90</div>
+            <div class="w-full bg-orange-100 h-3 rounded-full mt-1.5 overflow-hidden relative flex items-center justify-center">
+              <div class="bg-gradient-to-r from-orange-400 to-red-500 h-full w-[94%] absolute left-0"></div>
+              <span class="text-[8px] font-black text-white relative z-10 uppercase tracking-tighter">🔥 ACABANDO</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Daily Discover (Descobertas do Dia - 2 Colunas no Mobile, 6 Colunas no Desktop) -->
+      <div class="flex flex-col space-y-3">
+        <div class="bg-white p-3 rounded shadow-sm text-center border-b-2 border-orange-600">
+          <span class="text-xs font-black text-orange-600 uppercase tracking-wider">DESCOBERTAS DO DIA</span>
+        </div>
+
+        <div class="grid grid-cols-2 md:grid-cols-6 gap-2.5" id="home-product-grid">
+          <!-- Card 1 (Clicável para ir à PDP) -->
+          <div class="bg-white border border-gray-200 rounded overflow-hidden shadow-sm hover:border-orange-500 cursor-pointer transition flex flex-col group" id="home-grid-card-1">
+            <div class="relative w-full aspect-square bg-orange-50 flex items-center justify-center text-orange-600 font-bold text-xs">
+              <span class="group-hover:scale-105 transition-transform">Vestido Midi Lovito</span>
+              <span class="absolute top-1 left-1 bg-red-600 text-white text-[9px] font-bold px-1 rounded">OFICIAL</span>
+              <span class="absolute top-1 right-1 bg-yellow-400 text-orange-950 text-[9px] font-black px-1 rounded">-40%</span>
+            </div>
+            <div class="p-2 flex flex-col flex-1 justify-between text-xs space-y-1">
+              <span class="line-clamp-2 text-gray-800 text-[11px] leading-snug font-medium">Vestido Midi Canelado Lovito Gola Alta Elegante Outono</span>
+              <div class="flex items-baseline justify-between pt-1">
+                <span class="text-sm font-extrabold text-orange-600">R$ 53,94</span>
+                <span class="text-[10px] text-gray-400">8,4 mil vend.</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Card 2 -->
+          <div class="bg-white border border-gray-200 rounded overflow-hidden shadow-sm flex flex-col">
+            <div class="relative w-full aspect-square bg-gray-50 flex items-center justify-center text-gray-600 font-bold text-xs">
+              Smartwatch Fit
+              <span class="absolute top-1 left-1 bg-orange-600 text-white text-[9px] font-bold px-1 rounded">INDICADO</span>
+              <span class="absolute top-1 right-1 bg-yellow-400 text-orange-950 text-[9px] font-black px-1 rounded">-52%</span>
+            </div>
+            <div class="p-2 flex flex-col flex-1 justify-between text-xs space-y-1">
+              <span class="line-clamp-2 text-gray-800 text-[11px] leading-snug font-medium">Relógio Inteligente Smartwatch Monitor Cardíaco Bluetooth</span>
+              <div class="flex items-baseline justify-between pt-1">
+                <span class="text-sm font-extrabold text-orange-600">R$ 47,80</span>
+                <span class="text-[10px] text-gray-400">12,1 mil vend.</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Card 3 -->
+          <div class="bg-white border border-gray-200 rounded overflow-hidden shadow-sm flex flex-col">
+            <div class="relative w-full aspect-square bg-gray-50 flex items-center justify-center text-gray-600 font-bold text-xs">
+              Kit Meias
+              <span class="absolute top-1 right-1 bg-yellow-400 text-orange-950 text-[9px] font-black px-1 rounded">-25%</span>
+            </div>
+            <div class="p-2 flex flex-col flex-1 justify-between text-xs space-y-1">
+              <span class="line-clamp-2 text-gray-800 text-[11px] leading-snug font-medium">Kit 12 Pares de Meia Algodão Cano Curto Confortável</span>
+              <div class="flex items-baseline justify-between pt-1">
+                <span class="text-sm font-extrabold text-orange-600">R$ 24,90</span>
+                <span class="text-[10px] text-gray-400">45 mil vend.</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Card 4 -->
+          <div class="bg-white border border-gray-200 rounded overflow-hidden shadow-sm flex flex-col">
+            <div class="relative w-full aspect-square bg-gray-50 flex items-center justify-center text-gray-600 font-bold text-xs">
+              Mochila Antifurto
+              <span class="absolute top-1 left-1 bg-orange-600 text-white text-[9px] font-bold px-1 rounded">INDICADO</span>
+              <span class="absolute top-1 right-1 bg-yellow-400 text-orange-950 text-[9px] font-black px-1 rounded">-35%</span>
+            </div>
+            <div class="p-2 flex flex-col flex-1 justify-between text-xs space-y-1">
+              <span class="line-clamp-2 text-gray-800 text-[11px] leading-snug font-medium">Mochila Executiva Notebook Impermeável com Entrada USB</span>
+              <div class="flex items-baseline justify-between pt-1">
+                <span class="text-sm font-extrabold text-orange-600">R$ 68,50</span>
+                <span class="text-[10px] text-gray-400">3,8 mil vend.</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="text-center pt-3">
+          <button class="bg-white border border-gray-300 text-gray-700 font-bold text-xs py-2 px-8 rounded hover:bg-gray-50 shadow-sm">
+            Ver Mais Produtos (Rolagem Contínua)
+          </button>
+        </div>
+      </div>
+
+      <!-- Mobile App Bottom Navigation Bar (5 tabs) -->
+      <div id="mobile-home-bottom-nav" class="hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-50 py-1.5 flex justify-around text-center text-[10px] font-medium text-gray-500 shadow-2xl">
+        <div class="flex flex-col items-center text-orange-600 font-bold cursor-pointer">
+          <span class="text-base">🏠</span>
+          <span>Início</span>
+        </div>
+        <div class="flex flex-col items-center cursor-pointer">
+          <span class="text-base">🎬</span>
+          <span>Vídeo</span>
+        </div>
+        <div class="flex flex-col items-center cursor-pointer">
+          <span class="text-base">🔴</span>
+          <span>Live</span>
+        </div>
+        <div class="flex flex-col items-center cursor-pointer">
+          <span class="text-base">🔔</span>
+          <span>Notificações</span>
+        </div>
+        <div class="flex flex-col items-center cursor-pointer" id="bottom-nav-profile">
+          <span class="text-base">👤</span>
+          <span>Eu</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- VIEW 0: LOGIN PAGE (shopee.com.br/buyer/login) -->
+    <section id="view-login" class="hidden bg-white rounded shadow-sm border border-gray-200 p-8 max-w-4xl mx-auto my-4">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+        <!-- Left: Promotional Banner -->
+        <div class="hidden md:flex flex-col items-center justify-center p-6 bg-gradient-to-br from-orange-500 to-red-600 text-white rounded-lg text-center space-y-4 shadow-inner">
+          <svg class="w-20 h-20 fill-current text-white/90 drop-shadow" viewBox="0 0 40 40">
+            <path d="M20 4a6 6 0 00-6 6v2H8a2 2 0 00-2 2v20a2 2 0 002 2h24a2 2 0 002-2V14a2 2 0 00-2-2h-6v-2a6 6 0 00-6-6zm-4 6a4 4 0 118 0v2h-8v-2zm-6 4h20v18H10V14zm10 4a3 3 0 100 6 3 3 0 000-6z"/>
+          </svg>
+          <h2 class="text-2xl font-extrabold tracking-tight">Na Shopee Compensa Mais</h2>
+          <p class="text-xs text-orange-100 max-w-xs leading-relaxed">Aproveite frete grátis, cupons diários de desconto e as melhores ofertas relâmpago do Brasil.</p>
+          <div class="text-[11px] bg-white/20 px-3 py-1.5 rounded-full font-semibold">🔒 Ambiente Seguro e Criptografado</div>
+        </div>
+
+        <!-- Right: Login Form & QR Code Tabs -->
+        <div class="flex flex-col space-y-4">
+          <div class="flex justify-between items-center border-b border-gray-200 pb-3">
+            <h3 class="text-lg font-bold text-gray-800">Entre na sua conta</h3>
+            <button id="btn-toggle-qr-login" class="text-xs font-bold text-orange-600 hover:underline flex items-center space-x-1">
+              <span>📱 Entrar com QR Code</span>
+            </button>
+          </div>
+
+          <!-- Credentials Form -->
+          <div id="login-credentials-box" class="flex flex-col space-y-3 text-xs">
+            <div>
+              <label class="block text-gray-600 font-medium mb-1">Telefone / E-mail / Nome de usuário</label>
+              <input type="text" id="login-user-input" value="comprador@exemplo.com.br" class="w-full border border-gray-300 rounded px-3 py-2 text-xs focus:border-orange-500 outline-none">
+            </div>
+            <div>
+              <div class="flex justify-between mb-1">
+                <label class="text-gray-600 font-medium">Senha</label>
+                <span class="text-orange-600 cursor-pointer hover:underline">Esqueci minha senha</span>
+              </div>
+              <input type="password" id="login-pass-input" value="••••••••••••" class="w-full border border-gray-300 rounded px-3 py-2 text-xs focus:border-orange-500 outline-none">
+            </div>
+
+            <!-- Puzzle CAPTCHA Simulator Box -->
+            <div class="bg-gray-50 border border-gray-200 p-2.5 rounded flex items-center justify-between">
+              <div class="flex items-center space-x-2">
+                <span class="text-green-600 font-bold text-sm">✓</span>
+                <span class="text-[11px] text-gray-600 font-medium">Verificação de Segurança (Quebra-Cabeça)</span>
+              </div>
+              <span class="text-[10px] bg-green-100 text-green-800 px-1.5 py-0.5 rounded font-bold">Verificado</span>
+            </div>
+
+            <button id="btn-submit-login" class="w-full bg-shopee-orange text-white font-bold py-2.5 rounded text-sm hover:bg-orange-700 transition shadow">
+              FAZER LOGIN
+            </button>
+
+            <!-- Social Logins -->
+            <div class="flex items-center my-2 text-gray-400">
+              <div class="flex-1 border-t border-gray-200"></div>
+              <span class="px-2 text-[10px] uppercase font-bold text-gray-400">ou entre com</span>
+              <div class="flex-1 border-t border-gray-200"></div>
+            </div>
+
+            <div class="grid grid-cols-3 gap-2">
+              <button class="border border-gray-300 p-2 rounded text-center font-bold text-gray-700 hover:bg-gray-50">Google</button>
+              <button class="border border-gray-300 p-2 rounded text-center font-bold text-gray-700 hover:bg-gray-50">Facebook</button>
+              <button class="border border-gray-300 p-2 rounded text-center font-bold text-gray-700 hover:bg-gray-50">Apple</button>
+            </div>
+          </div>
+
+          <!-- QR Code Box (hidden by default) -->
+          <div id="login-qr-box" class="hidden flex flex-col items-center justify-center p-6 bg-gray-50 rounded border border-gray-200 space-y-3">
+            <div class="w-40 h-40 bg-white border border-gray-300 p-2 rounded shadow flex items-center justify-center">
+              <canvas id="login-qr-canvas" width="140" height="140" class="w-36 h-36"></canvas>
+            </div>
+            <p class="text-xs text-gray-600 text-center font-medium">Abra o <strong>App Shopee</strong> no celular &rarr; Toque no leitor de código na busca &rarr; Aponte para a tela.</p>
+            <button id="btn-back-credentials" class="text-xs text-orange-600 font-bold hover:underline">Voltar para Login com Senha</button>
+          </div>
+
+          <p class="text-[11px] text-gray-500 text-center pt-2">
+            Novo na Shopee? <span class="text-orange-600 font-bold cursor-pointer hover:underline">Cadastre-se</span>
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- VIEW 1: PRODUCT DETAIL PAGE (PDP) -->
+    <section id="view-pdp" class="bg-white rounded shadow-sm p-6">
+      <div class="grid grid-cols-1 md:grid-cols-12 gap-8">
+        
+        <!-- Left Column: Image Gallery & Zoom -->
+        <div class="md:col-span-5 flex flex-col space-y-4">
+          <div class="relative w-full aspect-square bg-gray-100 rounded overflow-hidden border border-gray-200 flex items-center justify-center group cursor-crosshair" id="pdp-main-image-box">
+            <!-- Simulated Product Photo SVG -->
+            <div id="pdp-img-display" class="w-full h-full flex flex-col items-center justify-center text-gray-400 bg-gradient-to-tr from-gray-50 to-orange-50 p-6 transition-all duration-200">
+              <svg id="pdp-img-icon" class="w-48 h-48 text-orange-500 drop-shadow-md transition-transform group-hover:scale-110" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+              </svg>
+              <span id="pdp-img-label" class="mt-4 text-xs font-bold uppercase tracking-widest text-orange-600 bg-orange-100 px-3 py-1 rounded-full">Modelo: Preto / Tamanho M</span>
+            </div>
+            <span class="absolute top-3 left-3 bg-red-600 text-white text-[11px] font-bold px-2 py-0.5 rounded shadow">OFICIAL</span>
+            <span class="absolute top-3 right-3 bg-yellow-400 text-orange-900 text-[11px] font-extrabold px-2 py-0.5 rounded shadow">-40% OFF</span>
+          </div>
+
+          <!-- Thumbnails Row -->
+          <div class="flex space-x-3 overflow-x-auto pb-1" id="pdp-thumbs">
+            <button class="w-16 h-16 rounded border-2 border-orange-500 p-1 flex items-center justify-center bg-orange-50 thumb-btn active" data-color="Preto">
+              <span class="text-[10px] font-bold text-gray-800">Preto</span>
+            </button>
+            <button class="w-16 h-16 rounded border border-gray-200 p-1 flex items-center justify-center bg-gray-50 thumb-btn" data-color="Bege">
+              <span class="text-[10px] font-bold text-gray-800">Bege</span>
+            </button>
+            <button class="w-16 h-16 rounded border border-gray-200 p-1 flex items-center justify-center bg-gray-50 thumb-btn" data-color="Terracota">
+              <span class="text-[10px] font-bold text-gray-800">Terracota</span>
+            </button>
+          </div>
+
+          <div class="flex items-center justify-between text-xs text-gray-500 pt-2 border-t border-gray-100">
+            <div class="flex space-x-2 items-center">
+              <span>Compartilhar:</span>
+              <span class="text-green-600 font-bold">WhatsApp</span>
+              <span class="text-blue-600 font-bold">Facebook</span>
+            </div>
+            <button class="flex items-center space-x-1 text-orange-600" id="btn-favorite">
+              <span>♡ Favoritar (3.421)</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Right Column: Product Identity, Price, SKU & CTAs -->
+        <div class="md:col-span-7 flex flex-col space-y-4">
+          <div>
+            <h1 class="text-xl font-bold text-gray-900 leading-snug">
+              <span class="bg-red-600 text-white text-xs px-1.5 py-0.5 rounded font-bold mr-1">Oficial</span>
+              Vestido Midi Canelado Lovito Gola Alta Elegante Outono Inverno
+            </h1>
+            <div class="flex items-center space-x-3 mt-2 text-xs text-gray-500">
+              <div class="flex items-center text-orange-500 font-bold">
+                <span class="mr-1 underline text-sm">4.8</span>
+                <span>★★★★★</span>
+              </div>
+              <span>|</span>
+              <span class="underline">2,3 mil avaliações</span>
+              <span>|</span>
+              <span class="font-medium text-gray-700">8,4 mil vendidos</span>
+            </div>
+          </div>
+
+          <!-- Price Container -->
+          <div class="bg-gray-50 p-4 rounded-md flex flex-col space-y-1">
+            <div class="flex items-baseline space-x-3">
+              <span class="text-sm text-gray-400 line-through">R$ 89,90</span>
+              <span class="text-3xl font-extrabold text-orange-600" id="pdp-current-price">R$ 53,94</span>
+              <span class="text-xs bg-orange-100 text-orange-700 font-bold px-1.5 py-0.5 rounded">40% OFF</span>
+            </div>
+            <div class="flex items-center space-x-2 text-xs text-green-700 font-medium">
+              <span class="bg-green-100 text-green-800 px-1.5 py-0.5 rounded font-bold">no Pix</span>
+              <span>R$ 48,55 com Desconto Pix de 10% exclusivo</span>
+            </div>
+            <span class="text-xs text-gray-500">em até 3x R$ 17,98 sem juros no cartão</span>
+          </div>
+
+          <!-- Store Coupons -->
+          <div class="flex items-center space-x-3 text-xs">
+            <span class="text-gray-400 font-medium w-24">Cupons da Loja:</span>
+            <span class="bg-orange-50 text-orange-600 border border-orange-200 px-2 py-0.5 rounded font-bold">R$ 5 OFF acima de R$ 50</span>
+            <span class="bg-orange-50 text-orange-600 border border-orange-200 px-2 py-0.5 rounded font-bold">10% OFF</span>
+          </div>
+
+          <!-- Color Variations -->
+          <div class="flex items-center space-x-3 text-xs pt-2">
+            <span class="text-gray-400 font-medium w-24">Cores:</span>
+            <div class="flex space-x-2" id="sku-color-group">
+              <button class="sku-color-btn px-3 py-1.5 border border-orange-600 text-orange-600 font-bold rounded check-triangle relative selected" data-value="Preto">Preto</button>
+              <button class="sku-color-btn px-3 py-1.5 border border-gray-200 text-gray-700 rounded hover:border-orange-500" data-value="Bege">Bege</button>
+              <button class="sku-color-btn px-3 py-1.5 border border-gray-200 text-gray-700 rounded hover:border-orange-500" data-value="Terracota">Terracota</button>
+            </div>
+          </div>
+
+          <!-- Size Variations -->
+          <div class="flex items-center space-x-3 text-xs pt-1">
+            <span class="text-gray-400 font-medium w-24">Tamanho:</span>
+            <div class="flex space-x-2" id="sku-size-group">
+              <button class="sku-size-btn px-3 py-1.5 border border-gray-200 text-gray-700 rounded hover:border-orange-500" data-value="P">P</button>
+              <button class="sku-size-btn px-3 py-1.5 border border-orange-600 text-orange-600 font-bold rounded check-triangle relative selected" data-value="M">M</button>
+              <button class="sku-size-btn px-3 py-1.5 border border-dashed border-gray-300 text-gray-300 bg-gray-50 rounded cursor-not-allowed" data-value="G" disabled title="Esgotado">G (Esgotado)</button>
+            </div>
+          </div>
+
+          <!-- Shipping Calculator -->
+          <div class="flex items-start space-x-3 text-xs pt-2 border-t border-gray-100">
+            <span class="text-gray-400 font-medium w-24 pt-1">Frete:</span>
+            <div class="flex-1 flex flex-col space-y-1">
+              <div class="flex items-center space-x-2">
+                <span class="text-teal-600 font-bold">🚚 Frete Grátis com cupom</span>
+                <span class="text-gray-400">para compras acima de R$ 19</span>
+              </div>
+              <div class="flex items-center space-x-2 mt-1">
+                <input type="text" id="input-cep" value="01310-100" class="border border-gray-300 rounded px-2 py-1 text-xs w-28 focus:border-orange-500 outline-none" placeholder="Digite seu CEP">
+                <button id="btn-calc-cep" class="bg-gray-100 border border-gray-300 px-2 py-1 rounded text-xs font-bold hover:bg-gray-200">Calcular</button>
+                <span id="cep-feedback" class="text-xs text-gray-600 font-medium">São Paulo, SP — Chegará em 3 dias</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Quantity Stepper & Stock -->
+          <div class="flex items-center space-x-3 text-xs pt-2">
+            <span class="text-gray-400 font-medium w-24">Quantidade:</span>
+            <div class="flex items-center border border-gray-300 rounded">
+              <button id="pdp-qty-minus" class="px-3 py-1 text-gray-600 hover:bg-gray-100 font-bold">-</button>
+              <span id="pdp-qty-value" class="px-4 py-1 text-gray-800 font-bold border-x border-gray-300">1</span>
+              <button id="pdp-qty-plus" class="px-3 py-1 text-gray-600 hover:bg-gray-100 font-bold">+</button>
+            </div>
+            <span class="text-gray-400 text-xs">142 peças disponíveis</span>
+          </div>
+
+          <!-- CTAs: Add to Cart and Buy Now -->
+          <div class="flex space-x-4 pt-4">
+            <button id="btn-add-cart" class="flex-1 bg-shopee-light border border-shopee-orange text-orange-600 font-bold py-3 px-4 rounded text-sm flex items-center justify-center space-x-2 hover:bg-orange-100 transition shadow-sm">
+              <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96 0 1.1.9 2 2 2h12v-2H7.42c-.14 0-.25-.11-.25-.25l.03-.12.9-1.63h7.45c.75 0 1.41-.41 1.75-1.03l3.58-6.49c.08-.14.12-.31.12-.48 0-.55-.45-1-1-1H5.21l-.94-2H1zm16 16c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2z"/></svg>
+              <span>Adicionar ao Carrinho</span>
+            </button>
+            <button id="btn-buy-now" class="flex-1 bg-shopee-orange text-white font-bold py-3 px-4 rounded text-sm hover:bg-orange-700 transition shadow-md">
+              Comprar Agora
+            </button>
+          </div>
+
+          <!-- Guarantee Badge -->
+          <div class="pt-3 flex items-center space-x-2 text-xs text-gray-500 border-t border-gray-100">
+            <span class="text-orange-600 font-bold">🛡️ Garantia Shopee:</span>
+            <span>Receba seu produto oficial ou o dobro do dinheiro de volta.</span>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Seller Info Block -->
+      <div class="mt-8 border border-gray-100 bg-gray-50/60 p-4 rounded flex items-center justify-between">
+        <div class="flex items-center space-x-4">
+          <div class="w-14 h-14 bg-red-100 border border-red-300 rounded-full flex items-center justify-center font-bold text-red-700 text-lg">L</div>
+          <div>
+            <div class="flex items-center space-x-1.5">
+              <span class="font-bold text-sm text-gray-800">Lovito Brasil Oficial</span>
+              <span class="bg-red-600 text-white text-[10px] px-1 rounded font-bold">Oficial</span>
+            </div>
+            <span class="text-xs text-gray-400">Online há 12 minutos</span>
+            <div class="flex space-x-2 mt-2">
+              <button class="border border-orange-500 text-orange-600 text-xs px-2.5 py-1 rounded bg-white hover:bg-orange-50 font-medium">💬 Conversar Agora</button>
+              <button class="border border-gray-300 text-gray-700 text-xs px-2.5 py-1 rounded bg-white hover:bg-gray-100 font-medium">Ver Página da Loja</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-3 gap-6 text-xs text-gray-500 border-l border-gray-200 pl-6">
+          <div>Avaliações: <span class="text-orange-600 font-bold">45,8 mil</span></div>
+          <div>Taxa de Resposta: <span class="text-orange-600 font-bold">98%</span></div>
+          <div>Tempo de Resposta: <span class="text-orange-600 font-bold">poucas horas</span></div>
+          <div>Produtos: <span class="text-orange-600 font-bold">1.240</span></div>
+          <div>Desde: <span class="text-orange-600 font-bold">há 3 anos</span></div>
+          <div>Seguidores: <span class="text-orange-600 font-bold">1,2 milhão</span></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- VIEW 2: SHOPPING CART PAGE -->
+    <section id="view-cart" class="hidden flex flex-col space-y-4">
+      <!-- Cart Table Header -->
+      <div class="bg-white p-4 rounded shadow-sm flex items-center text-xs font-bold text-gray-500">
+        <div class="w-1/2 flex items-center space-x-3">
+          <input type="checkbox" id="cart-check-all-top" class="w-4 h-4 accent-orange-600" checked>
+          <span>Produto</span>
+        </div>
+        <div class="w-1/8 text-center flex-1">Preço Unitário</div>
+        <div class="w-1/8 text-center flex-1">Quantidade</div>
+        <div class="w-1/8 text-center flex-1">Preço Total</div>
+        <div class="w-1/8 text-center flex-1">Ações</div>
+      </div>
+
+      <!-- Store 1 Item Card (Lovito) -->
+      <div class="bg-white rounded shadow-sm border border-gray-200 p-4 flex flex-col space-y-4">
+        <div class="flex items-center justify-between border-b border-gray-100 pb-2">
+          <div class="flex items-center space-x-2">
+            <input type="checkbox" id="cart-check-store-lovito" class="w-4 h-4 accent-orange-600" checked>
+            <span class="bg-red-600 text-white text-[10px] px-1 py-0.2 rounded font-bold">Oficial</span>
+            <span class="text-xs font-bold text-gray-800">Lovito Brasil Oficial</span>
+            <span class="text-xs text-orange-600 cursor-pointer">💬 Conversar</span>
+          </div>
+          <span class="text-xs text-orange-600 bg-orange-50 border border-orange-200 px-2 py-0.5 rounded font-medium">Cupom da Loja Aplicado: R$ 5,00 OFF</span>
+        </div>
+
+        <!-- Product Line -->
+        <div class="flex items-center text-xs">
+          <div class="w-1/2 flex items-center space-x-3">
+            <input type="checkbox" id="cart-item-check-1" class="w-4 h-4 accent-orange-600" checked>
+            <div class="w-16 h-16 bg-orange-50 border border-orange-200 rounded flex items-center justify-center font-bold text-orange-600 text-xs">Vestido</div>
+            <div class="flex flex-col space-y-1 pr-4">
+              <span class="font-medium text-gray-900 line-clamp-1">Vestido Midi Canelado Lovito Gola Alta Elegante Outono Inverno</span>
+              <span class="text-gray-400">Variação: <span id="cart-item-variation">Preto, M</span></span>
+            </div>
+          </div>
+          <div class="flex-1 text-center font-semibold text-gray-700">R$ 53,94</div>
+          <div class="flex-1 flex justify-center">
+            <div class="flex items-center border border-gray-300 rounded">
+              <button id="cart-qty-minus" class="px-2 py-0.5 hover:bg-gray-100 font-bold">-</button>
+              <span id="cart-qty-val" class="px-3 py-0.5 font-bold border-x border-gray-300">1</span>
+              <button id="cart-qty-plus" class="px-2 py-0.5 hover:bg-gray-100 font-bold">+</button>
+            </div>
+          </div>
+          <div class="flex-1 text-center font-bold text-orange-600" id="cart-item-total">R$ 53,94</div>
+          <div class="flex-1 text-center">
+            <button class="text-gray-500 hover:text-red-600 text-xs font-medium" id="btn-remove-item">Excluir</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Coupons & Coins Platform Strip -->
+      <div class="bg-white p-4 rounded shadow-sm border border-gray-200 flex flex-col space-y-3 text-xs">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center space-x-2">
+            <span class="text-orange-600 text-base">🎫</span>
+            <span class="font-bold text-gray-800">Cupom Shopee</span>
+          </div>
+          <div class="flex items-center space-x-2">
+            <span class="text-teal-600 bg-teal-50 border border-teal-200 px-2 py-0.5 rounded font-bold">Cupom de Frete Grátis Ativo ✓</span>
+            <span class="text-orange-600 font-semibold cursor-pointer">Alterar</span>
+          </div>
+        </div>
+
+        <div class="flex items-center justify-between border-t border-gray-100 pt-2">
+          <div class="flex items-center space-x-2">
+            <span class="text-yellow-500 text-base">🪙</span>
+            <span class="font-bold text-gray-800">Moedas Shopee</span>
+            <span class="text-gray-400">(Saldo: 450 moedas = R$ 4,50)</span>
+          </div>
+          <label class="flex items-center space-x-2 cursor-pointer">
+            <span class="text-gray-600 font-medium">Resgatar [-R$ 4,50]</span>
+            <input type="checkbox" id="cart-toggle-coins" class="w-4 h-4 accent-orange-600" checked>
+          </label>
+        </div>
+      </div>
+
+      <!-- Sticky Cart Footer -->
+      <div class="sticky bottom-0 bg-white border border-gray-200 shadow-lg rounded p-4 flex items-center justify-between">
+        <div class="flex items-center space-x-3 text-xs">
+          <input type="checkbox" id="cart-check-all-bottom" class="w-4 h-4 accent-orange-600" checked>
+          <span>Selecionar Tudo (<span id="cart-footer-items-count">1</span> item)</span>
+          <button class="text-gray-400 hover:text-red-500">Excluir selecionados</button>
+        </div>
+
+        <div class="flex items-center space-x-6">
+          <div class="flex flex-col text-right">
+            <div class="flex items-baseline space-x-1 justify-end">
+              <span class="text-xs text-gray-600">Total (<span id="cart-items-sum">1</span> item):</span>
+              <span class="text-2xl font-extrabold text-orange-600" id="cart-final-total">R$ 44,44</span>
+            </div>
+            <span class="text-xs text-green-600 font-bold">Economia total de R$ 49,96 com cupons e moedas</span>
+          </div>
+
+          <button id="btn-cart-to-checkout" class="bg-shopee-orange text-white font-bold py-3 px-8 rounded text-sm hover:bg-orange-700 transition shadow-md">
+            Finalizar Compra
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- VIEW 3: CHECKOUT PAGE -->
+    <section id="view-checkout" class="hidden flex flex-col space-y-4">
+      <!-- Envelope postal border -->
+      <div class="postal-border rounded-t"></div>
+
+      <!-- Shipping Address Box -->
+      <div class="bg-white p-4 rounded-b shadow-sm border border-t-0 border-gray-200 flex flex-col space-y-2">
+        <div class="flex items-center space-x-2 text-orange-600 font-bold text-sm">
+          <span>📍</span>
+          <span>Endereço de Entrega</span>
+        </div>
+        <div class="flex items-center justify-between text-xs text-gray-700">
+          <div>
+            <span class="font-bold text-gray-900 mr-2">Maria da Silva</span>
+            <span class="text-gray-500 mr-4">(+55 11 98765-4321)</span>
+            <span>Av. Paulista, 1000, Apto 42 - Bela Vista, São Paulo - SP, 01310-100</span>
+            <span class="ml-2 text-[10px] bg-red-100 text-red-700 border border-red-300 px-1 py-0.2 rounded font-bold">Padrão</span>
+          </div>
+          <button class="text-orange-600 font-bold hover:underline" id="btn-edit-address">Trocar</button>
+        </div>
+      </div>
+
+      <!-- Products Ordered Review -->
+      <div class="bg-white p-4 rounded shadow-sm border border-gray-200 flex flex-col space-y-4">
+        <div class="flex items-center space-x-2 border-b border-gray-100 pb-2 text-xs font-bold text-gray-800">
+          <span class="bg-red-600 text-white text-[10px] px-1 py-0.2 rounded">Oficial</span>
+          <span>Lovito Brasil Oficial</span>
+        </div>
+
+        <div class="flex items-center justify-between text-xs">
+          <div class="flex items-center space-x-3 w-1/2">
+            <div class="w-12 h-12 bg-orange-50 border border-orange-200 rounded flex items-center justify-center font-bold text-orange-600 text-xs">Vestido</div>
+            <div>
+              <span class="font-medium text-gray-900 block">Vestido Midi Canelado Lovito Gola Alta Elegante Outono Inverno</span>
+              <span class="text-gray-400">Variação: Preto, M</span>
+            </div>
+          </div>
+          <div class="text-gray-600">Preço: <span class="font-bold text-gray-800">R$ 53,94</span></div>
+          <div class="text-gray-600">Qtd: <span class="font-bold text-gray-800" id="checkout-qty-label">1</span></div>
+          <div class="text-orange-600 font-bold" id="checkout-item-subtotal">R$ 53,94</div>
+        </div>
+
+        <!-- Shipping option for package -->
+        <div class="bg-gray-50 p-3 rounded flex items-center justify-between text-xs border border-gray-100">
+          <div class="flex flex-col">
+            <span class="font-bold text-gray-700">Opção de Envio: Padrão</span>
+            <span class="text-gray-400">Receba entre 24 e 28 de Outubro</span>
+          </div>
+          <div class="flex items-center space-x-2">
+            <span class="text-gray-400 line-through">R$ 14,90</span>
+            <span class="text-teal-600 font-bold">R$ 0,00</span>
+            <span class="text-[10px] bg-teal-100 text-teal-800 px-1 py-0.2 rounded font-bold">Frete Grátis com cupom</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Payment Methods Accordion -->
+      <div class="bg-white p-4 rounded shadow-sm border border-gray-200 flex flex-col space-y-3">
+        <h3 class="text-sm font-bold text-gray-800">Método de Pagamento</h3>
+        
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-3 text-xs" id="payment-methods-grid">
+          <button class="pay-method-btn border-2 border-orange-600 bg-orange-50/50 p-3 rounded flex flex-col items-center justify-center font-bold text-orange-700 transition" data-method="pix">
+            <span class="text-base">⚡ PIX</span>
+            <span class="text-[11px] text-green-700 font-extrabold mt-1">10% OFF EXTRA</span>
+          </button>
+          <button class="pay-method-btn border border-gray-200 p-3 rounded flex flex-col items-center justify-center font-medium text-gray-700 hover:border-orange-500 transition" data-method="card">
+            <span class="text-base">💳 Cartão de Crédito</span>
+            <span class="text-[10px] text-gray-400 mt-1">Até 3x sem juros</span>
+          </button>
+          <button class="pay-method-btn border border-gray-200 p-3 rounded flex flex-col items-center justify-center font-medium text-gray-700 hover:border-orange-500 transition" data-method="boleto">
+            <span class="text-base">📄 Boleto Bancário</span>
+            <span class="text-[10px] text-gray-400 mt-1">Vence em 3 dias</span>
+          </button>
+          <button class="pay-method-btn border border-gray-200 p-3 rounded flex flex-col items-center justify-center font-medium text-gray-700 hover:border-orange-500 transition" data-method="maree">
+            <span class="text-base">👛 ShopeePay / Maree</span>
+            <span class="text-[10px] text-gray-400 mt-1">Saldo em conta</span>
+          </button>
+        </div>
+
+        <!-- Payment explanation box -->
+        <div id="pay-info-box" class="bg-orange-50 border border-orange-200 p-3 rounded text-xs text-orange-900">
+          <span class="font-bold">Pagamento via Pix:</span> Aprovação instantânea 24/7! O QR Code dinâmico e o código Pix Copia e Cola serão gerados na próxima tela com validade de 2 horas. Você economiza mais 10% nesta compra!
+        </div>
+      </div>
+
+      <!-- Financial Summary & Place Order -->
+      <div class="bg-white p-6 rounded shadow-sm border border-gray-200 flex flex-col space-y-3 text-xs">
+        <div class="flex justify-between text-gray-500">
+          <span>Subtotal dos Produtos:</span>
+          <span class="font-bold text-gray-700" id="summary-subtotal">R$ 53,94</span>
+        </div>
+        <div class="flex justify-between text-gray-500">
+          <span>Total do Frete:</span>
+          <span class="text-gray-400 line-through">R$ 14,90</span>
+        </div>
+        <div class="flex justify-between text-teal-600 font-bold">
+          <span>Desconto de Frete:</span>
+          <span>- R$ 14,90</span>
+        </div>
+        <div class="flex justify-between text-orange-600 font-bold">
+          <span>Cupom do Vendedor:</span>
+          <span>- R$ 5,00</span>
+        </div>
+        <div class="flex justify-between text-orange-600 font-bold" id="summary-pix-discount-row">
+          <span>Desconto Pix Exclusivo (10%):</span>
+          <span id="summary-pix-discount">- R$ 5,39</span>
+        </div>
+        <div class="flex justify-between text-yellow-600 font-bold">
+          <span>Moedas Shopee Resgatadas:</span>
+          <span>- R$ 4,50</span>
+        </div>
+        
+        <div class="border-t border-gray-200 pt-3 flex items-baseline justify-between">
+          <span class="text-sm font-bold text-gray-900">Pagamento Total:</span>
+          <span class="text-3xl font-extrabold text-orange-600" id="checkout-final-total">R$ 39,05</span>
+        </div>
+
+        <div class="pt-4 flex justify-end">
+          <button id="btn-place-order" class="bg-shopee-orange text-white font-extrabold py-3.5 px-10 rounded text-base hover:bg-orange-700 transition shadow-lg flex items-center space-x-2">
+            <span>Fazer Pedido</span>
+            <span>&rarr;</span>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- VIEW 4: ORDER SUCCESS & PIX QR CODE -->
+    <section id="view-order" class="hidden bg-white rounded shadow-sm p-8 flex flex-col items-center text-center space-y-6">
+      <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center text-green-600 text-3xl font-extrabold">✓</div>
+      <div>
+        <h2 class="text-2xl font-extrabold text-gray-900">Pedido Realizado com Sucesso!</h2>
+        <p class="text-xs text-gray-500 mt-1">Pedido nº <span class="font-bold text-gray-800" id="order-number-display">2610188472910A</span> | Comprovante enviado para o seu e-mail</p>
+      </div>
+
+      <!-- Pix Box -->
+      <div class="bg-orange-50/70 border-2 border-orange-200 p-6 rounded-lg max-w-md w-full flex flex-col items-center space-y-4">
+        <div class="flex items-center space-x-2 text-xs font-bold text-orange-800 bg-orange-200/60 px-3 py-1 rounded-full">
+          <span>⏳ Vencimento em: <span id="pix-timer">01:59:45</span></span>
+        </div>
+
+        <!-- Rendered Canvas Simulated QR Code -->
+        <div class="p-3 bg-white border border-gray-300 rounded shadow-inner">
+          <canvas id="pix-qr-canvas" width="180" height="180" class="w-44 h-44"></canvas>
+        </div>
+
+        <div class="w-full text-left">
+          <label class="text-[11px] font-bold text-gray-500 block mb-1">Código Pix Copia e Cola:</label>
+          <div class="flex space-x-1">
+            <input type="text" id="input-pix-string" readonly value="00020126580014br.gov.bcb.pix0136a629b1f2-shopee-brasil-checkout-2610188472910A520400005303986540539.055802BR5920Shopee Brasil Pagamen6009Sao Paulo62070503***6304E1F8" class="bg-white border border-gray-300 rounded px-2.5 py-1.5 text-xs text-gray-600 font-mono w-full outline-none select-all">
+            <button id="btn-copy-pix" class="bg-shopee-orange text-white px-4 py-1.5 rounded text-xs font-bold hover:bg-orange-700 transition shrink-0">Copiar</button>
+          </div>
+        </div>
+
+        <div class="text-xs text-gray-500 flex items-center space-x-1 pt-1">
+          <span class="animate-pulse text-orange-600">●</span>
+          <span>Aguardando liquidação bancária automática via WebSocket...</span>
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="flex space-x-4 pt-4">
+        <button id="btn-simulate-paid" class="bg-green-600 text-white font-bold text-xs py-2.5 px-6 rounded hover:bg-green-700 transition shadow">
+          Simular Confirmação de Pagamento
+        </button>
+        <button id="btn-restart-funnel" class="border border-gray-300 text-gray-700 font-bold text-xs py-2.5 px-6 rounded hover:bg-gray-100 transition">
+          Reiniciar Simulador (Nova Compra)
+        </button>
+      </div>
+    </section>
+
+  </main>
+
+  
+  <!-- MOBILE BOTTOM ACTION BAR FOR PDP (Visible only in mobile mode) -->
+  <div id="mobile-pdp-action-bar" class="hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-50 px-3 py-2 flex items-center justify-between shadow-2xl">
+    <div class="flex items-center space-x-3 pr-2 border-r border-gray-200">
+      <button class="flex flex-col items-center text-teal-600 text-[10px] font-medium" id="btn-mobile-chat">
+        <span class="text-base">💬</span>
+        <span>Chat</span>
+      </button>
+      <button class="flex flex-col items-center text-orange-600 text-[10px] font-medium" id="btn-mobile-cart-action">
+        <span class="text-base">🛒</span>
+        <span>Carrinho</span>
+      </button>
+    </div>
+    <div class="flex items-center space-x-2 pl-2 flex-1">
+      <button id="btn-mobile-open-sheet" class="flex-1 bg-orange-100 text-orange-700 font-bold py-2 px-2 rounded text-xs">
+        Adicionar
+      </button>
+      <button id="btn-mobile-buy-now" class="flex-1 bg-shopee-orange text-white font-bold py-2 px-2 rounded text-xs shadow">
+        Comprar
+      </button>
+    </div>
+  </div>
+
+  <!-- MOBILE BOTTOM SHEET MODAL (SKU Drawer on Mobile) -->
+  <div id="mobile-sku-sheet" class="hidden fixed inset-0 z-50 bg-black/60 flex flex-col justify-end transition-opacity duration-300">
+    <div class="bg-white rounded-t-2xl p-4 flex flex-col space-y-3 max-h-[85vh] overflow-y-auto animate-slide-up">
+      <div class="flex items-start justify-between border-b border-gray-100 pb-3">
+        <div class="flex items-center space-x-3">
+          <div class="w-16 h-16 bg-orange-50 border border-orange-200 rounded flex items-center justify-center font-bold text-orange-600 text-xs">Foto 1:1</div>
+          <div>
+            <div class="text-xl font-extrabold text-orange-600">R$ 53,94</div>
+            <div class="text-xs text-gray-500">Estoque: 142 peças</div>
+            <div class="text-[11px] text-gray-400">Selecionado: <span id="sheet-selection-label" class="font-bold text-gray-700">Preto, M</span></div>
+          </div>
+        </div>
+        <button id="btn-close-sheet" class="text-gray-400 hover:text-gray-700 text-xl font-bold px-2">&times;</button>
+      </div>
+
+      <!-- Color in Sheet -->
+      <div class="text-xs">
+        <span class="font-bold text-gray-700 block mb-1.5">Cor:</span>
+        <div class="flex space-x-2">
+          <button class="sheet-color-btn px-3 py-1.5 border border-orange-600 text-orange-600 font-bold rounded check-triangle relative selected" data-value="Preto">Preto</button>
+          <button class="sheet-color-btn px-3 py-1.5 border border-gray-200 text-gray-700 rounded" data-value="Bege">Bege</button>
+          <button class="sheet-color-btn px-3 py-1.5 border border-gray-200 text-gray-700 rounded" data-value="Terracota">Terracota</button>
+        </div>
+      </div>
+
+      <!-- Size in Sheet -->
+      <div class="text-xs">
+        <span class="font-bold text-gray-700 block mb-1.5">Tamanho:</span>
+        <div class="flex space-x-2">
+          <button class="sheet-size-btn px-3 py-1.5 border border-gray-200 text-gray-700 rounded" data-value="P">P</button>
+          <button class="sheet-size-btn px-3 py-1.5 border border-orange-600 text-orange-600 font-bold rounded check-triangle relative selected" data-value="M">M</button>
+          <button class="sheet-size-btn px-3 py-1.5 border border-dashed border-gray-300 text-gray-300 bg-gray-50 rounded cursor-not-allowed" disabled>G (Esgotado)</button>
+        </div>
+      </div>
+
+      <div class="pt-3 border-t border-gray-100 flex space-x-3">
+        <button id="btn-sheet-confirm-cart" class="flex-1 bg-orange-100 text-orange-700 font-bold py-2.5 rounded text-xs">Adicionar ao Carrinho</button>
+        <button id="btn-sheet-confirm-buy" class="flex-1 bg-shopee-orange text-white font-bold py-2.5 rounded text-xs shadow">Comprar Agora</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- FLOATING TOAST FEEDBACK -->
+  <div id="toast-modal" class="fixed inset-0 flex items-center justify-center z-50 pointer-events-none opacity-0 transition-opacity duration-300">
+    <div class="bg-black/85 text-white px-6 py-3.5 rounded-lg shadow-2xl flex items-center space-x-3 text-sm font-semibold">
+      <span class="text-green-400 text-lg">✓</span>
+      <span id="toast-message">Produto adicionado ao seu carrinho!</span>
+    </div>
+  </div>
+
+  <script>
+    // State Management for the Funnel
+    const state = {
+      product: {
+        title: "Vestido Midi Canelado Lovito Gola Alta Elegante Outono Inverno",
+        basePrice: 53.94,
+        originalPrice: 89.90,
+        color: "Preto",
+        size: "M",
+        qty: 1
+      },
+      cart: {
+        items: [
+          { id: 1, name: "Vestido Midi Lovito", color: "Preto", size: "M", price: 53.94, qty: 1, checked: true }
+        ],
+        redeemCoins: true,
+        coinValue: 4.50,
+        storeVoucher: 5.00,
+        freeShippingVoucher: 14.90
+      },
+      checkout: {
+        paymentMethod: "pix", // pix, card, boleto, maree
+        shippingCost: 14.90,
+        shippingDiscount: 14.90
+      }
+    };
+
+    // Draw Simulated QR Code on Canvas
+    
+    function drawLoginQr() {
+      const canvas = document.getElementById("login-qr-canvas");
+      if (!canvas) return;
+      const ctx = canvas.getContext("2d");
+      ctx.fillStyle = "#FFFFFF";
+      ctx.fillRect(0, 0, 140, 140);
+      ctx.fillStyle = "#EE4D2D";
+      ctx.fillRect(10, 10, 30, 30);
+      ctx.fillRect(100, 10, 30, 30);
+      ctx.fillRect(10, 100, 30, 30);
+      ctx.fillStyle = "#FFFFFF";
+      ctx.fillRect(16, 16, 18, 18);
+      ctx.fillRect(106, 16, 18, 18);
+      ctx.fillRect(16, 106, 18, 18);
+      ctx.fillStyle = "#EE4D2D";
+      ctx.fillRect(21, 21, 8, 8);
+      ctx.fillRect(111, 21, 8, 8);
+      ctx.fillRect(21, 111, 8, 8);
+      ctx.fillStyle = "#1F2937";
+      for (let i = 0; i < 12; i++) {
+        for (let j = 0; j < 12; j++) {
+          if ((i < 4 && j < 4) || (i < 4 && j > 7) || (i > 7 && j < 4)) continue;
+          if ((i * j + i + j) % 2 === 0) ctx.fillRect(12 + j * 9.5, 12 + i * 9.5, 6, 6);
+        }
+      }
+    }
+    
+    function drawQrCode() {
+      const canvas = document.getElementById("pix-qr-canvas");
+      if (!canvas) return;
+      const ctx = canvas.getContext("2d");
+      const size = 180;
+      ctx.fillStyle = "#FFFFFF";
+      ctx.fillRect(0, 0, size, size);
+      ctx.fillStyle = "#000000";
+
+      // Fixed Finder Patterns
+      function drawFinder(x, y) {
+        ctx.fillRect(x, y, 40, 40);
+        ctx.fillStyle = "#FFFFFF";
+        ctx.fillRect(x + 6, y + 6, 28, 28);
+        ctx.fillStyle = "#000000";
+        ctx.fillRect(x + 12, y + 12, 16, 16);
+      }
+      drawFinder(10, 10);
+      drawFinder(size - 50, 10);
+      drawFinder(10, size - 50);
+
+      // Random Matrix Dots Pattern
+      for (let r = 0; r < 18; r++) {
+        for (let c = 0; c < 18; c++) {
+          if ((r < 6 && c < 6) || (r < 6 && c > 11) || (r > 11 && c < 6)) continue;
+          if ((r * c + r + c * 3) % 2 === 0) {
+            ctx.fillRect(10 + c * 8.8, 10 + r * 8.8, 7.5, 7.5);
+          }
+        }
+      }
+    }
+
+    // Toast Feedback Helper
+    function showToast(msg) {
+      const toast = document.getElementById("toast-modal");
+      const text = document.getElementById("toast-message");
+      text.innerText = msg;
+      toast.classList.remove("opacity-0", "pointer-events-none");
+      setTimeout(() => {
+        toast.classList.add("opacity-0", "pointer-events-none");
+      }, 1800);
+    }
+
+    // Switch Visible Screen
+    function switchView(viewId) {
+      const viewHome = document.getElementById("view-home"); if (viewHome) viewHome.classList.add("hidden");
+      const viewLogin = document.getElementById("view-login"); if (viewLogin) viewLogin.classList.add("hidden");
+      document.getElementById("view-pdp").classList.add("hidden");
+      document.getElementById("view-cart").classList.add("hidden");
+      document.getElementById("view-checkout").classList.add("hidden");
+      document.getElementById("view-order").classList.add("hidden");
+
+      const target = document.getElementById(viewId);
+      target.classList.remove("hidden");
+
+      // Update badge label in header
+      const stageBadge = document.getElementById("header-stage-badge");
+      if (viewId === "view-home") stageBadge.innerText = "Página Inicial (Home)";
+      if (viewId === "view-login") stageBadge.innerText = "Página de Login";
+      if (viewId === "view-pdp") stageBadge.innerText = "1. Página do Produto";
+      if (viewId === "view-cart") stageBadge.innerText = "2. Carrinho de Compras";
+      if (viewId === "view-checkout") stageBadge.innerText = "3. Finalização da Compra";
+      if (viewId === "view-order") {
+        stageBadge.innerText = "4. Pedido Emitido (Pix)";
+        drawQrCode();
+      }
+
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    // Recalculate Cart & Checkout Totals
+    function updateTotals() {
+      const item = state.cart.items[0];
+      const itemSubtotal = item.checked ? item.price * item.qty : 0;
+      
+      document.getElementById("cart-item-total").innerText = "R$ " + (item.price * item.qty).toFixed(2).replace(".", ",");
+      document.getElementById("cart-qty-val").innerText = item.qty;
+      document.getElementById("pdp-qty-value").innerText = state.product.qty;
+      document.getElementById("header-cart-count").innerText = item.qty;
+      document.getElementById("badge-cart-qty").innerText = item.qty;
+
+      // Cart Final Total
+      let cartTotal = itemSubtotal;
+      if (item.checked && cartTotal > 0) {
+        cartTotal -= state.cart.storeVoucher;
+        if (state.cart.redeemCoins) cartTotal -= state.cart.coinValue;
+      }
+      cartTotal = Math.max(0, cartTotal);
+      document.getElementById("cart-final-total").innerText = "R$ " + cartTotal.toFixed(2).replace(".", ",");
+
+      // Checkout Totals
+      document.getElementById("checkout-qty-label").innerText = item.qty;
+      document.getElementById("checkout-item-subtotal").innerText = "R$ " + (item.price * item.qty).toFixed(2).replace(".", ",");
+      document.getElementById("summary-subtotal").innerText = "R$ " + (item.price * item.qty).toFixed(2).replace(".", ",");
+
+      let checkoutTotal = item.price * item.qty - state.cart.storeVoucher;
+      if (state.cart.redeemCoins) checkoutTotal -= state.cart.coinValue;
+
+      // Pix Discount Calculation
+      const isPix = state.checkout.paymentMethod === "pix";
+      const pixDiscountRow = document.getElementById("summary-pix-discount-row");
+      const pixDiscountVal = isPix ? (item.price * item.qty * 0.10) : 0;
+
+      if (isPix) {
+        pixDiscountRow.classList.remove("hidden");
+        document.getElementById("summary-pix-discount").innerText = "- R$ " + pixDiscountVal.toFixed(2).replace(".", ",");
+        checkoutTotal -= pixDiscountVal;
+      } else {
+        pixDiscountRow.classList.add("hidden");
+      }
+
+      checkoutTotal = Math.max(0, checkoutTotal);
+      document.getElementById("checkout-final-total").innerText = "R$ " + checkoutTotal.toFixed(2).replace(".", ",");
+    }
+
+    // Event Listeners Initialization
+    document.addEventListener("DOMContentLoaded", () => {
+      // Step buttons in header
+      document.getElementById("step-btn-pdp").addEventListener("click", () => switchView("view-pdp"));
+      document.getElementById("step-btn-cart").addEventListener("click", () => switchView("view-cart"));
+      document.getElementById("step-btn-checkout").addEventListener("click", () => switchView("view-checkout"));
+      document.getElementById("step-btn-order").addEventListener("click", () => switchView("view-order"));
+      document.getElementById("btn-header-home").addEventListener("click", () => switchView("view-pdp"));
+      document.getElementById("btn-open-cart").addEventListener("click", () => switchView("view-cart"));
+
+      // PDP Quantity
+      document.getElementById("pdp-qty-minus").addEventListener("click", () => {
+        if (state.product.qty > 1) {
+          state.product.qty--;
+          state.cart.items[0].qty = state.product.qty;
+          updateTotals();
+        }
+      });
+      document.getElementById("pdp-qty-plus").addEventListener("click", () => {
+        state.product.qty++;
+        state.cart.items[0].qty = state.product.qty;
+        updateTotals();
+      });
+
+      // Cart Quantity
+      document.getElementById("cart-qty-minus").addEventListener("click", () => {
+        if (state.cart.items[0].qty > 1) {
+          state.cart.items[0].qty--;
+          state.product.qty = state.cart.items[0].qty;
+          updateTotals();
+        }
+      });
+      document.getElementById("cart-qty-plus").addEventListener("click", () => {
+        state.cart.items[0].qty++;
+        state.product.qty = state.cart.items[0].qty;
+        updateTotals();
+      });
+
+      // SKU Color Selection
+      document.querySelectorAll(".sku-color-btn").forEach(btn => {
+        btn.addEventListener("click", (e) => {
+          document.querySelectorAll(".sku-color-btn").forEach(b => {
+            b.classList.remove("border-orange-600", "text-orange-600", "font-bold", "check-triangle", "selected");
+            b.classList.add("border-gray-200", "text-gray-700");
+          });
+          btn.classList.add("border-orange-600", "text-orange-600", "font-bold", "check-triangle", "selected");
+          state.product.color = btn.dataset.value;
+          state.cart.items[0].color = state.product.color;
+          document.getElementById("cart-item-variation").innerText = `${state.product.color}, ${state.product.size}`;
+          document.getElementById("pdp-img-label").innerText = `Modelo: ${state.product.color} / Tamanho ${state.product.size}`;
+          showToast(`Cor selecionada: ${state.product.color}`);
+        });
+      });
+
+      // SKU Size Selection
+      document.querySelectorAll(".sku-size-btn").forEach(btn => {
+        if (btn.disabled) return;
+        btn.addEventListener("click", (e) => {
+          document.querySelectorAll(".sku-size-btn:not([disabled])").forEach(b => {
+            b.classList.remove("border-orange-600", "text-orange-600", "font-bold", "check-triangle", "selected");
+            b.classList.add("border-gray-200", "text-gray-700");
+          });
+          btn.classList.add("border-orange-600", "text-orange-600", "font-bold", "check-triangle", "selected");
+          state.product.size = btn.dataset.value;
+          state.cart.items[0].size = state.product.size;
+          document.getElementById("cart-item-variation").innerText = `${state.product.color}, ${state.product.size}`;
+          document.getElementById("pdp-img-label").innerText = `Modelo: ${state.product.color} / Tamanho ${state.product.size}`;
+          showToast(`Tamanho selecionado: ${state.product.size}`);
+        });
+      });
+
+      // CEP calculation
+      document.getElementById("btn-calc-cep").addEventListener("click", () => {
+        const cep = document.getElementById("input-cep").value;
+        const feedback = document.getElementById("cep-feedback");
+        feedback.innerText = `Consultando frete para CEP ${cep}...`;
+        setTimeout(() => {
+          feedback.innerText = `São Paulo, SP — Envio Padrão Grátis (Chega em 3 dias)`;
+          showToast("Frete calculado com sucesso!");
+        }, 400);
+      });
+
+      // Add to Cart CTA
+      document.getElementById("btn-add-cart").addEventListener("click", () => {
+        showToast("O produto foi adicionado ao seu carrinho!");
+      });
+
+      // Buy Now CTA (Straight to checkout)
+      document.getElementById("btn-buy-now").addEventListener("click", () => {
+        showToast("Encaminhando para o Checkout...");
+        setTimeout(() => switchView("view-checkout"), 400);
+      });
+
+      // Cart to Checkout CTA
+      document.getElementById("btn-cart-to-checkout").addEventListener("click", () => {
+        switchView("view-checkout");
+      });
+
+      // Coins toggle in cart
+      document.getElementById("cart-toggle-coins").addEventListener("change", (e) => {
+        state.cart.redeemCoins = e.target.checked;
+        updateTotals();
+      });
+
+      // Checkbox master toggle
+      document.getElementById("cart-check-all-top").addEventListener("change", (e) => {
+        const checked = e.target.checked;
+        document.getElementById("cart-check-all-bottom").checked = checked;
+        document.getElementById("cart-check-store-lovito").checked = checked;
+        document.getElementById("cart-item-check-1").checked = checked;
+        state.cart.items[0].checked = checked;
+        updateTotals();
+      });
+      document.getElementById("cart-check-all-bottom").addEventListener("change", (e) => {
+        const checked = e.target.checked;
+        document.getElementById("cart-check-all-top").checked = checked;
+        document.getElementById("cart-check-store-lovito").checked = checked;
+        document.getElementById("cart-item-check-1").checked = checked;
+        state.cart.items[0].checked = checked;
+        updateTotals();
+      });
+
+      // Payment Method selection in Checkout
+      document.querySelectorAll(".pay-method-btn").forEach(btn => {
+        btn.addEventListener("click", () => {
+          document.querySelectorAll(".pay-method-btn").forEach(b => {
+            b.classList.remove("border-2", "border-orange-600", "bg-orange-50/50", "text-orange-700");
+            b.classList.add("border", "border-gray-200", "text-gray-700");
+          });
+          btn.classList.add("border-2", "border-orange-600", "bg-orange-50/50", "text-orange-700");
+          state.checkout.paymentMethod = btn.dataset.method;
+
+          const box = document.getElementById("pay-info-box");
+          if (state.checkout.paymentMethod === "pix") {
+            box.innerHTML = '<span class="font-bold">Pagamento via Pix:</span> Aprovação instantânea 24/7! O QR Code dinâmico e o código Pix Copia e Cola serão gerados na próxima tela. Você economiza mais 10%!';
+          } else if (state.checkout.paymentMethod === "card") {
+            box.innerHTML = '<span class="font-bold">Cartão de Crédito:</span> Parcele em até 3x sem juros de R$ 17,98. Dados criptografados com segurança PCI-DSS.';
+          } else if (state.checkout.paymentMethod === "boleto") {
+            box.innerHTML = '<span class="font-bold">Boleto Bancário:</span> Vencimento em 3 dias úteis. Compensação bancária de 1 a 3 dias úteis.';
+          } else {
+            box.innerHTML = '<span class="font-bold">ShopeePay / Maree:</span> Pague utilizando o saldo da sua carteira digital Shopee instantaneamente.';
+          }
+          updateTotals();
+        });
+      });
+
+      // Place Order CTA
+      document.getElementById("btn-place-order").addEventListener("click", () => {
+        const btn = document.getElementById("btn-place-order");
+        btn.innerText = "Processando Pedido...";
+        btn.disabled = true;
+        setTimeout(() => {
+          btn.innerText = "Fazer Pedido";
+          btn.disabled = false;
+          switchView("view-order");
+          showToast("Pedido gerado com sucesso!");
+        }, 600);
+      });
+
+      // Copy Pix String
+      document.getElementById("btn-copy-pix").addEventListener("click", () => {
+        const input = document.getElementById("input-pix-string");
+        input.select();
+        try {
+          navigator.clipboard.writeText(input.value);
+        } catch (err) {
+          document.execCommand("copy");
+        }
+        showToast("Código Pix Copia e Cola copiado!");
+      });
+
+      // Simulate Paid Action
+      document.getElementById("btn-simulate-paid").addEventListener("click", () => {
+        showToast("✅ Pagamento Pix Compensado pelo Banco Central!");
+        
+      });
+
+      // Restart Simulation
+      document.getElementById("btn-restart-funnel").addEventListener("click", () => {
+        state.product.qty = 1;
+        state.cart.items[0].qty = 1;
+        updateTotals();
+        switchView("view-pdp");
+      });
+
+      
+      document.getElementById("btn-remove-item").addEventListener("click", () => {
+        showToast("Item removido do carrinho.");
+      });
+      const btnBulkDelete = document.querySelector("#view-cart button.text-gray-400");
+      if (btnBulkDelete) {
+        btnBulkDelete.addEventListener("click", () => {
+          showToast("Nenhum item adicional selecionado para exclusão.");
+        });
+      }
+      
+      document.getElementById("step-btn-login").addEventListener("click", () => switchView("view-login"));
+      document.getElementById("nav-user-label").addEventListener("click", () => switchView("view-login"));
+
+      // Toggle QR code login
+      const btnToggleQr = document.getElementById("btn-toggle-qr-login");
+      const btnBackCred = document.getElementById("btn-back-credentials");
+      if (btnToggleQr && btnBackCred) {
+        btnToggleQr.addEventListener("click", () => {
+          document.getElementById("login-credentials-box").classList.add("hidden");
+          document.getElementById("login-qr-box").classList.remove("hidden");
+          drawLoginQr();
+        });
+        btnBackCred.addEventListener("click", () => {
+          document.getElementById("login-qr-box").classList.add("hidden");
+          document.getElementById("login-credentials-box").classList.remove("hidden");
+        });
+      }
+
+      // Submit login button
+      const btnSubmitLogin = document.getElementById("btn-submit-login");
+      if (btnSubmitLogin) {
+        btnSubmitLogin.addEventListener("click", () => {
+          showToast("Login realizado com sucesso!");
+          setTimeout(() => switchView("view-pdp"), 500);
+        });
+      }
+
+      
+      // Mobile / Desktop Viewport Toggle
+      const btnDesktop = document.getElementById("toggle-view-desktop");
+      const btnMobile = document.getElementById("toggle-view-mobile");
+      const mainContainer = document.querySelector("main");
+      const mobileActionBar = document.getElementById("mobile-pdp-action-bar");
+      let isMobileMode = false;
+
+      function setMobileMode(active) {
+        isMobileMode = active;
+        if (active) {
+          btnMobile.classList.add("bg-white", "text-orange-600", "shadow-sm");
+          btnMobile.classList.remove("text-white/90");
+          btnDesktop.classList.remove("bg-white", "text-orange-600", "shadow-sm");
+          btnDesktop.classList.add("text-white/90");
+
+          mainContainer.classList.remove("max-w-6xl");
+          mainContainer.classList.add("max-w-[400px]", "border-4", "border-gray-800", "rounded-3xl", "shadow-2xl", "bg-gray-100", "pb-16");
+          mobileActionBar.classList.remove("hidden");
+
+          const mobileHomeNav = document.getElementById("mobile-home-bottom-nav");
+          if (mobileHomeNav) mobileHomeNav.classList.remove("hidden");
+
+          showToast("Modo Mobile (Celular 375px) Ativado!");
+        } else {
+          btnDesktop.classList.add("bg-white", "text-orange-600", "shadow-sm");
+          btnDesktop.classList.remove("text-white/90");
+          btnMobile.classList.remove("bg-white", "text-orange-600", "shadow-sm");
+          btnMobile.classList.add("text-white/90");
+
+          mainContainer.classList.add("max-w-6xl");
+          mainContainer.classList.remove("max-w-[400px]", "border-4", "border-gray-800", "rounded-3xl", "shadow-2xl", "bg-gray-100", "pb-16");
+          mobileActionBar.classList.add("hidden");
+
+          const mobileHomeNav = document.getElementById("mobile-home-bottom-nav");
+          if (mobileHomeNav) mobileHomeNav.classList.add("hidden");
+
+          showToast("Modo Desktop (Computador) Ativado!");
+        }
+      }
+
+      btnMobile.addEventListener("click", () => setMobileMode(true));
+      btnDesktop.addEventListener("click", () => setMobileMode(false));
+
+      // Mobile Bottom Sheet Handlers
+      const sheet = document.getElementById("mobile-sku-sheet");
+      const btnOpenSheet = document.getElementById("btn-mobile-open-sheet");
+      const btnCloseSheet = document.getElementById("btn-close-sheet");
+      const btnMobileBuy = document.getElementById("btn-mobile-buy-now");
+      const btnSheetCart = document.getElementById("btn-sheet-confirm-cart");
+      const btnSheetBuy = document.getElementById("btn-sheet-confirm-buy");
+
+      if (btnOpenSheet && sheet) {
+        btnOpenSheet.addEventListener("click", () => sheet.classList.remove("hidden"));
+        if (btnCloseSheet) btnCloseSheet.addEventListener("click", () => sheet.classList.add("hidden"));
+        if (btnMobileBuy) btnMobileBuy.addEventListener("click", () => sheet.classList.remove("hidden"));
+        
+        if (btnSheetCart) {
+          btnSheetCart.addEventListener("click", () => {
+            sheet.classList.add("hidden");
+            showToast("Item adicionado ao carrinho!");
+          });
+        }
+        if (btnSheetBuy) {
+          btnSheetBuy.addEventListener("click", () => {
+            sheet.classList.add("hidden");
+            switchView("view-checkout");
+          });
+        }
+      }
+
+      const btnMobileCartAction = document.getElementById("btn-mobile-cart-action");
+      if (btnMobileCartAction) {
+        btnMobileCartAction.addEventListener("click", () => switchView("view-cart"));
+      }
+      const btnMobileChat = document.getElementById("btn-mobile-chat");
+      if (btnMobileChat) {
+        btnMobileChat.addEventListener("click", () => showToast("Abrindo Chat ao vivo com o Vendedor..."));
+      }
+
+      
+      document.getElementById("step-btn-home").addEventListener("click", () => switchView("view-home"));
+      document.getElementById("btn-header-home").addEventListener("click", () => switchView("view-home"));
+
+      const homeCard1 = document.getElementById("home-grid-card-1");
+      if (homeCard1) homeCard1.addEventListener("click", () => switchView("view-pdp"));
+
+      const homeFlashCard = document.getElementById("home-flash-product-card");
+      if (homeFlashCard) homeFlashCard.addEventListener("click", () => switchView("view-pdp"));
+
+      const homeChatTrig = document.getElementById("home-chat-trigger");
+      if (homeChatTrig) homeChatTrig.addEventListener("click", () => showToast("Abrindo Central de Chat..."));
+
+      const homeCartTrig = document.getElementById("home-cart-trigger");
+      if (homeCartTrig) homeCartTrig.addEventListener("click", () => switchView("view-cart"));
+
+      const bottomNavProfile = document.getElementById("bottom-nav-profile");
+      if (bottomNavProfile) bottomNavProfile.addEventListener("click", () => switchView("view-login"));
+
+      // Initialize
+      updateTotals();
+    });
+  </script>
+</body>
+</html>
