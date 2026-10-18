@@ -22,7 +22,10 @@ export default function ProductCard({ product }: { product: MedusaProduct }) {
             className="w-full h-full object-cover"
           />
         ) : (
-          <div className="w-full h-full shimmer" />
+          <div className="w-full h-full flex flex-col items-center justify-center gap-1 text-textSecondary">
+            <span className="text-2xl">📦</span>
+            <span className="text-[10px]">Sem foto</span>
+          </div>
         )}
         <span className="absolute top-1 left-1 bg-badgeOfficial text-white text-[10px] font-bold px-1.5 py-0.5 rounded">
           OFICIAL

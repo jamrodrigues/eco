@@ -24,7 +24,22 @@ export default function FlashSaleSection({ products }: { products: MedusaProduct
               href={`/produto/${product.handle}`}
               className="snap-start shrink-0 w-[45%] md:w-[160px] bg-surface border border-black/[.09] rounded overflow-hidden"
             >
-              <div className="aspect-square bg-canvas shimmer" />
+              <div className="aspect-square bg-canvas relative">
+                {product.thumbnail ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={product.thumbnail}
+                    alt={product.title}
+                    loading="lazy"
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full flex flex-col items-center justify-center gap-1 text-textSecondary">
+                    <span className="text-2xl">📦</span>
+                    <span className="text-[10px]">Sem foto</span>
+                  </div>
+                )}
+              </div>
               <div className="p-2">
                 <p className="text-brand font-extrabold text-sm">{formatBRL(price)}</p>
                 <div className="mt-1 h-2 rounded-full bg-brand/15 relative overflow-hidden">
