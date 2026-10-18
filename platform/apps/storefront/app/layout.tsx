@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 import "./globals.css"
 import { brandConfig } from "@/config/brand.config"
 import ViewportSimulatorToggle from "@/components/ViewportSimulatorToggle"
+import CookieConsentBanner from "@/components/CookieConsentBanner"
 
 export const metadata: Metadata = {
   title: brandConfig.storeName,
@@ -14,6 +15,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       <body className="min-h-full flex flex-col bg-canvas text-textPrimary font-sans">
         <main className="viewport-sim-root flex-1 flex flex-col">{children}</main>
         <ViewportSimulatorToggle />
+        <CookieConsentBanner />
       </body>
     </html>
   )

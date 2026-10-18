@@ -245,6 +245,25 @@ export async function ensureGuestCustomer(cartId: string) {
   )
 }
 
+/**
+ * Vincula o carrinho ao cliente REALMENTE autenticado (cadastro/login
+ * real, ver src/lib/auth.ts) — usado no checkout, agora que ele exige
+ * sessão. `ensureGuestCustomer` continua existindo só para a prévia de
+ * saldo de moedas no /cart antes do visitante logar.
+ */
+export async function linkCustomerToCart(cartId: string, token: string) {
+  return fetchJson<{ customer_id: string }>(`/store/carts/${cartId}/link-customer`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` },
+  })
+}
+
+export async function getCartCoins(cartId: string) {
+  return fetchJson<{ coins_balance: number; ledger: unknown[] }>(
+    `/store/carts/${cartId}/coins`
+  )
+}
+
 export const STORE_COUPON_CODE = "CUPOMLOJA5"
 // Limiar de UX só: a Promotion nativa (ver seed-store-coupon-promotion.ts
 // no backend) não tem mais regra de mínimo-gasto server-side (Medusa não

@@ -6,7 +6,19 @@ export const config = {
   matcher: ["/((?!_next/|favicon.ico|images/|assets/).*)"],
 }
 
+const SESSION_COOKIE = "session_token"
+
 export async function middleware(request: NextRequest) {
+  if (request.nextUrl.pathname.startsWith("/checkout")) {
+    const hasSession = request.cookies.has(SESSION_COOKIE)
+    if (!hasSession) {
+      const url = request.nextUrl.clone()
+      url.pathname = "/login"
+      url.search = `?next=${encodeURIComponent(request.nextUrl.pathname)}`
+      return NextResponse.redirect(url)
+    }
+  }
+
   try {
     const res = await fetch(`${BACKEND_URL}/store/maintenance-status`, {
       headers: { "x-publishable-api-key": PUBLISHABLE_KEY },

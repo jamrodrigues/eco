@@ -24,6 +24,7 @@ Itens que apareceram em auditoria pós-Fase 4, antes de abrir a Fase 5:
 - ✅ Cupom de loja migrado do hack client-trusted pro módulo nativo de Promotions do Medusa (`f2cbb1a`)
 - ✅ Retirada na loja física + seletor de modalidade de envio no checkout, nunca tinha sido plugado (`63c600f`)
 - ✅ RBAC real no Admin (4 papéis: Super Admin, Gerente, Operador de PDV, Atendimento+Marketing) + modo manutenção do storefront (`fafd51e`)
+- ✅ Cadastro real de cliente (antes só existia login, zero fluxo de registro), checkout travado a quem tem conta, consentimento LGPD granular (privacidade obrigatória + marketing opcional separados), banner de cookies com opt-in real, e política de privacidade/cookies reescrita no formato LGPD
 
 ## Notas de arquitetura / decisões vivas
 

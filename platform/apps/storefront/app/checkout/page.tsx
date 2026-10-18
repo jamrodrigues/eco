@@ -8,7 +8,8 @@ import {
   type Cart,
   type BrPricing,
   getCartIfExists,
-  ensureGuestCustomer,
+  linkCustomerToCart,
+  getCartCoins,
   updateCartDetails,
   addShippingMethod,
   applyBrDiscounts,
@@ -24,6 +25,7 @@ import {
   alreadyRedeemedCoins,
   clearStoredCartId,
 } from "@/lib/cart"
+import { getCurrentCustomer, getSessionToken } from "@/lib/auth"
 
 const STANDARD_SHIPPING_OPTION_ID = process.env.NEXT_PUBLIC_STANDARD_SHIPPING_OPTION_ID || ""
 const EXPRESS_SHIPPING_OPTION_ID = process.env.NEXT_PUBLIC_EXPRESS_SHIPPING_OPTION_ID || ""
@@ -92,7 +94,7 @@ export default function CheckoutPage() {
     postal_code: "01310-100",
     country_code: "br",
   })
-  const [email, setEmail] = useState("convidado@dev.local")
+  const [email, setEmail] = useState("")
 
   async function recalc(
     c: Cart,
@@ -129,10 +131,28 @@ export default function CheckoutPage() {
         router.push("/cart")
         return
       }
+
+      // O middleware já bloqueia /checkout sem cookie de sessão, mas
+      // confere de novo aqui (ex: sessão expirada do lado do Medusa
+      // mas o cookie ainda presente) antes de vincular o carrinho.
+      const token = getSessionToken()
+      const customer = token ? await getCurrentCustomer() : null
+      if (!token || !customer) {
+        router.push(`/login?next=/checkout`)
+        return
+      }
+      setEmail(customer.email)
+      setAddress((prev) => ({
+        ...prev,
+        first_name: customer.first_name || prev.first_name,
+        last_name: customer.last_name || prev.last_name,
+      }))
+
+      await linkCustomerToCart(c.id, token)
       if (c.shipping_methods.length === 0 && STANDARD_SHIPPING_OPTION_ID) {
         await addShippingMethod(c.id, STANDARD_SHIPPING_OPTION_ID)
       }
-      const { coins_balance } = await ensureGuestCustomer(c.id)
+      const { coins_balance } = await getCartCoins(c.id)
       setCoinsBalance(coins_balance)
       const fresh = await getCartIfExists()
       setCart(fresh)

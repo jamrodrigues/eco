@@ -1,4 +1,4 @@
-import { configureStoreSearch, defineMiddlewares } from '@medusajs/framework/http'
+import { authenticate, configureStoreSearch, defineMiddlewares } from '@medusajs/framework/http'
 import { hyperlocalContext } from './middlewares/hyperlocal-context'
 import { accessControlGuard } from './middlewares/access-control'
 
@@ -26,6 +26,11 @@ export default defineMiddlewares({
       method: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
       matcher: '/admin/*',
       middlewares: [accessControlGuard],
+    },
+    {
+      method: ['POST'],
+      matcher: '/store/carts/:id/link-customer',
+      middlewares: [authenticate('customer', ['bearer'])],
     },
   ],
 })
