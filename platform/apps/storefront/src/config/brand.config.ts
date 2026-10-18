@@ -15,6 +15,7 @@ export interface BrandConfig {
     enableVehicleFitmentFilter: boolean
     enableOemPartNumberSearch: boolean
     enableHyperlocalCityBadge: boolean
+    enablePwaInstallPrompt: boolean
   }
 }
 
@@ -35,5 +36,6 @@ export const brandConfig: BrandConfig = {
     enableVehicleFitmentFilter: false,
     enableOemPartNumberSearch: false,
     enableHyperlocalCityBadge: true,
+    enablePwaInstallPrompt: true,
   },
 }
