@@ -58,5 +58,8 @@ module.exports = defineConfig({
     {
       resolve: "./src/modules/institutional-pages",
     },
+    {
+      resolve: "./src/modules/store-coins",
+    },
   ],
 })

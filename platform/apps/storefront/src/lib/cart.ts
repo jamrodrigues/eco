@@ -26,6 +26,7 @@ export type Cart = {
   id: string
   customer_id: string | null
   item_total: number
+  item_subtotal: number
   shipping_total: number
   total: number
   items: CartItem[]
@@ -244,10 +245,32 @@ export async function ensureGuestCustomer(cartId: string) {
   )
 }
 
+export const STORE_COUPON_CODE = "CUPOMLOJA5"
+// Limiar de UX só: a Promotion nativa (ver seed-store-coupon-promotion.ts
+// no backend) não tem mais regra de mínimo-gasto server-side (Medusa não
+// suporta esse atributo de regra nesta versão — ver comentário no seed).
+// Isso só decide quando mostrar/permitir marcar o checkbox do cupom.
+export const STORE_COUPON_MIN_SPEND = 5000
+
+export async function addPromoCode(cartId: string, code: string) {
+  const { cart } = await fetchJson<{ cart: Cart }>(`/store/carts/${cartId}/promotions`, {
+    method: "POST",
+    body: JSON.stringify({ promo_codes: [code] }),
+  })
+  return cart
+}
+
+export async function removePromoCode(cartId: string, code: string) {
+  const { cart } = await fetchJson<{ cart: Cart }>(`/store/carts/${cartId}/promotions`, {
+    method: "DELETE",
+    body: JSON.stringify({ promo_codes: [code] }),
+  })
+  return cart
+}
+
 export async function applyBrDiscounts(
   cartId: string,
   opts: {
-    store_coupon_cents?: number
     free_shipping?: boolean
     coins_to_redeem?: number
     is_pix_selected?: boolean

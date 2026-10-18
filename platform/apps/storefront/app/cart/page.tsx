@@ -15,13 +15,15 @@ import {
   addLineItem,
   ensureGuestCustomer,
   applyBrDiscounts,
+  addPromoCode,
+  removePromoCode,
+  STORE_COUPON_CODE,
+  STORE_COUPON_MIN_SPEND,
   trueAvailableCoins,
   alreadyRedeemedCoins,
 } from "@/lib/cart"
 
 const SELLER_NAME = "Lovito Brasil Oficial"
-const STORE_COUPON_CENTS = 500
-const MIN_SPEND_FOR_COUPON = 5000
 
 export default function CartPage() {
   const router = useRouter()
@@ -78,13 +80,23 @@ export default function CartPage() {
     freeShipOn: boolean,
     balanceOverride?: number | null
   ) {
-    const fresh = await getCartIfExists()
+    let fresh = await getCartIfExists()
     if (!fresh) return
+
+    // Cupom agora é uma Promotion nativa — aplica/remove via
+    // POST|DELETE /store/carts/:id/promotions, não mais um campo
+    // numérico que o backend confiava cegamente.
+    const eligibleCoupon = couponOn && fresh.item_subtotal >= STORE_COUPON_MIN_SPEND
+    const couponCurrentlyApplied = fresh.item_total < fresh.item_subtotal
+    if (eligibleCoupon && !couponCurrentlyApplied) {
+      fresh = await addPromoCode(fresh.id, STORE_COUPON_CODE)
+    } else if (!eligibleCoupon && couponCurrentlyApplied) {
+      fresh = await removePromoCode(fresh.id, STORE_COUPON_CODE)
+    }
     setCart(fresh)
+
     const balance = balanceOverride ?? coinsBalance
-    const eligibleCoupon = couponOn && fresh.item_total >= MIN_SPEND_FOR_COUPON
     const br = await applyBrDiscounts(fresh.id, {
-      store_coupon_cents: eligibleCoupon ? STORE_COUPON_CENTS : 0,
       free_shipping: freeShipOn,
       coins_to_redeem: coinsOn ? Math.min(450, trueAvailableCoins(fresh, balance)) : 0,
       is_pix_selected: false,

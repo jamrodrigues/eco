@@ -4,11 +4,11 @@ import {
   createCartCreditLinesWorkflow,
   deleteCartCreditLinesWorkflow,
 } from "@medusajs/medusa/core-flows"
-import { debitCoins, creditCoins, coinsToCents } from "../modules/store-coins/service"
+import { STORE_COINS_MODULE } from "../modules/store-coins"
+import { redeemCoins, undoRedeem, coinsToCents, getSettings } from "../modules/store-coins/ledger"
 
 export type ApplyBrDiscountsInput = {
   cart_id: string
-  store_coupon_cents?: number
   free_shipping?: boolean
   coins_to_redeem?: number
   pix_discount_percent?: number
@@ -31,18 +31,30 @@ type BrDiscountsState = {
 }
 
 /**
- * Motor de empilhamento de descontos BR (@BackendMedusa, Fase 1-3):
- * cupom de loja + cupom de frete grátis + moedas + desconto Pix (10%),
- * todos aplicados simultaneamente sobre o mesmo carrinho.
+ * Motor de empilhamento de descontos BR (@BackendMedusa, Fase 1-3,
+ * migrado na Fase "moedas via admin"): cupom de loja + cupom de frete
+ * grátis + moedas + desconto Pix (10%), todos aplicados simultaneamente
+ * sobre o mesmo carrinho.
  *
- * O total "de exibição" (br_pricing) agora também é expresso como um
- * Cart Credit Line real (reference "br_discounts"), que é o mecanismo
- * nativo do Medusa v2 para abater um valor do cart.total sem mexer na
- * engine de precificação de item. Isso faz cart.total (e por tabela
- * payment_collection.amount / order.total no /complete) baterem
- * exatamente com o número exibido no carrinho e no checkout — sem essa
- * credit line, cart.total continuava refletindo só preço + frete,
- * ignorando os descontos BR (gap identificado na Fase 3).
+ * O cupom de loja NÃO é mais calculado aqui — virou uma Promotion
+ * nativa do Medusa (ver seed-store-coupon-promotion.ts), aplicada via
+ * POST /store/carts/:id/promotions. O Medusa já desconta isso sozinho
+ * em cart.item_total (confirmado: item.unit_price fica cru, mas
+ * cart.item_total — populado mesmo via cartModuleService.retrieveCart —
+ * já vem líquido do ajuste da promoção). Aqui só *lemos* esse total já
+ * líquido e expomos store_coupon_discount (= item_subtotal - item_total)
+ * de volta pro frontend, só para exibição da linha no resumo.
+ *
+ * O que continua sendo cálculo manual (porque não dá pra modelar como
+ * Promotion nativa, ou não valeria a pena pelo tipo de UX): frete
+ * grátis (é um toggle direto do cliente, não um código de cupom —
+ * daria pra virar Promotion com target_type "shipping_methods", mas
+ * decidimos deixar como está por agora, revisitar se fizer sentido),
+ * moedas (depende da carteira do cliente) e desconto Pix (depende do
+ * método de pagamento escolhido). Esses continuam expressos como um
+ * Cart Credit Line real (reference "br_discounts") por cima do total
+ * nativo já líquido do cupom — mecanismo que já resolvia o gap de
+ * cart.total não bater com o resumo (Fase 3).
  *
  * Idempotente quanto a moedas: só debita/credita a *diferença* em
  * relação ao último valor de coins_to_redeem salvo no carrinho, já que
@@ -55,46 +67,63 @@ export async function applyBrDiscounts(
 ): Promise<BrPricingBreakdown> {
   const query = container.resolve(ContainerRegistrationKeys.QUERY)
   const cartModuleService = container.resolve(Modules.CART)
-  const customerModuleService = container.resolve(Modules.CUSTOMER)
+  const storeCoinsService: any = container.resolve(STORE_COINS_MODULE)
+  const settings = await getSettings(storeCoinsService)
 
   const cart = await cartModuleService.retrieveCart(input.cart_id, {
     relations: ["items", "shipping_methods"],
   })
 
-  const itemTotal = (cart.items || []).reduce(
-    (sum: number, item: any) => sum + item.unit_price * item.quantity,
-    0
-  )
-  const shippingTotal = (cart.shipping_methods || []).reduce(
-    (sum: number, method: any) => sum + method.amount,
-    0
-  )
+  // cart.item_total/item_subtotal já vêm líquidos/brutos de qualquer
+  // Promotion nativa aplicada (ex: CUPOMLOJA5) — testado via medusa
+  // exec que o module service popula esses campos corretamente, não só
+  // a Store API. item.unit_price continua cru (não usar para total).
+  const itemTotal = Number(cart.item_total)
+  const itemSubtotal = Number(cart.item_subtotal)
+  const shippingTotal = Number(cart.shipping_total)
 
-  const storeCouponDiscount = Math.min(input.store_coupon_cents || 0, itemTotal)
+  const storeCouponDiscount = Math.max(0, itemSubtotal - itemTotal)
   const freeShippingDiscount = input.free_shipping ? shippingTotal : 0
 
   const prevState = (cart.metadata?.br_discounts_state || null) as BrDiscountsState | null
-  const requestedCoins = input.coins_to_redeem || 0
+  const requestedCoins = Math.min(input.coins_to_redeem || 0, settings.max_redeem_per_order)
   const previouslyRedeemed = prevState?.coins_redeemed || 0
 
+  // Nunca confia no saldo que o cliente alega ter: redeemCoins le o saldo
+  // real do razao e limita pelo teto configurado no Admin, server-side.
+  let actualRedeemed = previouslyRedeemed
   if (cart.customer_id && requestedCoins !== previouslyRedeemed) {
     const delta = requestedCoins - previouslyRedeemed
     if (delta > 0) {
-      await debitCoins(customerModuleService, cart.customer_id, delta)
+      const { redeemed } = await redeemCoins(storeCoinsService, {
+        customerId: cart.customer_id,
+        coins: delta,
+        referenceId: cart.id,
+      })
+      actualRedeemed = previouslyRedeemed + redeemed
     } else if (delta < 0) {
-      await creditCoins(customerModuleService, cart.customer_id, -delta)
+      await undoRedeem(storeCoinsService, {
+        customerId: cart.customer_id,
+        coins: -delta,
+        referenceId: cart.id,
+      })
+      actualRedeemed = requestedCoins
     }
   }
-  const coinsDiscount = cart.customer_id ? coinsToCents(requestedCoins) : 0
+  const coinsDiscount = cart.customer_id ? coinsToCents(actualRedeemed, settings) : 0
 
+  // Pix incide sobre o preço cheio do produto (item_subtotal), não sobre
+  // o já descontado pelo cupom — mantém o criterio de aceite original da
+  // Fase 1 (10% de R$53,94 = R$5,39, não 10% de R$48,94).
   const pixDiscount = input.is_pix_selected
-    ? Math.round((itemTotal * (input.pix_discount_percent ?? 10)) / 100)
+    ? Math.round((itemSubtotal * (input.pix_discount_percent ?? 10)) / 100)
     : 0
 
+  // itemTotal já está líquido do cupom nativo — não subtrai de novo aqui,
+  // senão desconta em dobro.
   const total =
     itemTotal +
     shippingTotal -
-    storeCouponDiscount -
     freeShippingDiscount -
     coinsDiscount -
     pixDiscount
@@ -116,8 +145,9 @@ export async function applyBrDiscounts(
     })
   }
 
-  const totalDiscount =
-    storeCouponDiscount + freeShippingDiscount + coinsDiscount + pixDiscount
+  // storeCouponDiscount NÃO entra aqui: já está embutido em cart.item_total
+  // via Promotion nativa, a credit line cobre só o que o Medusa não sabe.
+  const totalDiscount = freeShippingDiscount + coinsDiscount + pixDiscount
 
   let newCreditLineIds: string[] = []
   if (totalDiscount > 0) {
@@ -140,7 +170,7 @@ export async function applyBrDiscounts(
   }
 
   const nextState: BrDiscountsState = {
-    coins_redeemed: requestedCoins,
+    coins_redeemed: actualRedeemed,
     credit_line_ids: newCreditLineIds,
   }
 

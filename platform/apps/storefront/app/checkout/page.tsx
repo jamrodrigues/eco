@@ -12,6 +12,10 @@ import {
   updateCartDetails,
   addShippingMethod,
   applyBrDiscounts,
+  addPromoCode,
+  removePromoCode,
+  STORE_COUPON_CODE,
+  STORE_COUPON_MIN_SPEND,
   createPaymentCollection,
   createPaymentSession,
   completeCart,
@@ -22,8 +26,6 @@ import {
 } from "@/lib/cart"
 
 const STANDARD_SHIPPING_OPTION_ID = process.env.NEXT_PUBLIC_STANDARD_SHIPPING_OPTION_ID || ""
-const STORE_COUPON_CENTS = 500
-const MIN_SPEND_FOR_COUPON = 5000
 
 type PaymentMethod = "pix" | "card" | "boleto" | "wallet"
 
@@ -67,12 +69,21 @@ export default function CheckoutPage() {
     pixOn: boolean,
     balanceOverride?: number | null
   ) {
-    const eligibleCoupon = couponOn && c.item_total >= MIN_SPEND_FOR_COUPON
+    let fresh = c
+    const eligibleCoupon = couponOn && fresh.item_subtotal >= STORE_COUPON_MIN_SPEND
+    const couponCurrentlyApplied = fresh.item_total < fresh.item_subtotal
+    if (eligibleCoupon && !couponCurrentlyApplied) {
+      fresh = await addPromoCode(fresh.id, STORE_COUPON_CODE)
+      setCart(fresh)
+    } else if (!eligibleCoupon && couponCurrentlyApplied) {
+      fresh = await removePromoCode(fresh.id, STORE_COUPON_CODE)
+      setCart(fresh)
+    }
+
     const balance = balanceOverride ?? coinsBalance
-    const br = await applyBrDiscounts(c.id, {
-      store_coupon_cents: eligibleCoupon ? STORE_COUPON_CENTS : 0,
+    const br = await applyBrDiscounts(fresh.id, {
       free_shipping: freeShipOn,
-      coins_to_redeem: coinsOn ? Math.min(450, trueAvailableCoins(c, balance)) : 0,
+      coins_to_redeem: coinsOn ? Math.min(450, trueAvailableCoins(fresh, balance)) : 0,
       is_pix_selected: pixOn,
     })
     setPricing(br)
@@ -308,7 +319,7 @@ export default function CheckoutPage() {
         <div className="bg-surface border border-black/[.09] rounded p-4 h-fit sticky top-4">
           <h2 className="font-semibold text-sm mb-3">Resumo Financeiro</h2>
           <div className="space-y-1.5 text-sm">
-            <Row label="Subtotal dos Produtos" value={formatBRL(cart.item_total)} />
+            <Row label="Subtotal dos Produtos" value={formatBRL(cart.item_subtotal)} />
             <Row label="Total do Frete" value={formatBRL(cart.shipping_total)} />
             <Row
               label={
