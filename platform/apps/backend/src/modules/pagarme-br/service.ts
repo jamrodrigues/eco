@@ -37,7 +37,7 @@ class PagarmeBrService extends AbstractPaymentProvider<PagarmeBrOptions> {
 
   async initiatePayment(
     input: CreatePaymentProviderSession
-  ): Promise<PaymentProviderSessionResponse["data"] | PaymentProviderError> {
+  ): Promise<PaymentProviderSessionResponse | PaymentProviderError> {
     const amount = Number(input.amount)
     const sessionId = `pagarme_${this.options_.method}_${crypto
       .randomUUID()
@@ -48,23 +48,29 @@ class PagarmeBrService extends AbstractPaymentProvider<PagarmeBrOptions> {
       const emv = this.buildFakePixEmv(sessionId, amount)
       return {
         id: sessionId,
-        provider_method: "pp_pix_br",
-        qr_code_emv: emv,
-        qr_code_base64: Buffer.from(emv).toString("base64"),
-        expires_at: expiresAt,
-        status: "pending",
-        sandbox: this.isSandbox(),
+        data: {
+          id: sessionId,
+          provider_method: "pix",
+          qr_code_emv: emv,
+          qr_code_base64: Buffer.from(emv).toString("base64"),
+          expires_at: expiresAt,
+          status: "pending",
+          sandbox: this.isSandbox(),
+        },
       }
     }
 
     if (this.options_.method === "card") {
       return {
         id: sessionId,
-        provider_method: "pp_card_br",
-        max_installments: 12,
-        installments_without_interest: 3,
-        status: "pending",
-        sandbox: this.isSandbox(),
+        data: {
+          id: sessionId,
+          provider_method: "card",
+          max_installments: 12,
+          installments_without_interest: 3,
+          status: "pending",
+          sandbox: this.isSandbox(),
+        },
       }
     }
 
@@ -72,11 +78,14 @@ class PagarmeBrService extends AbstractPaymentProvider<PagarmeBrOptions> {
     const dueDate = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000)
     return {
       id: sessionId,
-      provider_method: "pp_boleto_br",
-      linha_digitavel: this.buildFakeBoletoLine(sessionId, amount),
-      due_date: dueDate.toISOString(),
-      status: "pending",
-      sandbox: this.isSandbox(),
+      data: {
+        id: sessionId,
+        provider_method: "boleto",
+        linha_digitavel: this.buildFakeBoletoLine(sessionId, amount),
+        due_date: dueDate.toISOString(),
+        status: "pending",
+        sandbox: this.isSandbox(),
+      },
     }
   }
 
@@ -85,27 +94,27 @@ class PagarmeBrService extends AbstractPaymentProvider<PagarmeBrOptions> {
   }
 
   async capturePayment(input: any) {
-    return { ...input.data, status: "captured" }
+    return { data: { ...input.data, status: "captured" } }
   }
 
   async cancelPayment(input: any) {
-    return { ...input.data, status: "canceled" }
+    return { data: { ...input.data, status: "canceled" } }
   }
 
   async deletePayment(input: any) {
-    return { ...input.data }
+    return { data: { ...input.data } }
   }
 
   async refundPayment(input: any) {
-    return { ...input.data, status: "refunded" }
+    return { data: { ...input.data, status: "refunded" } }
   }
 
   async retrievePayment(input: any) {
-    return input.data
+    return { data: input.data }
   }
 
   async updatePayment(input: UpdatePaymentProviderSession) {
-    return input.data
+    return { data: input.data }
   }
 
   async getPaymentStatus(input: any) {

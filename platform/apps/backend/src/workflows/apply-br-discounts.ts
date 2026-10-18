@@ -1,6 +1,10 @@
 import { MedusaContainer } from "@medusajs/framework"
 import { ContainerRegistrationKeys, Modules } from "@medusajs/framework/utils"
-import { debitCoins, coinsToCents } from "../modules/store-coins/service"
+import {
+  createCartCreditLinesWorkflow,
+  deleteCartCreditLinesWorkflow,
+} from "@medusajs/medusa/core-flows"
+import { debitCoins, creditCoins, coinsToCents } from "../modules/store-coins/service"
 
 export type ApplyBrDiscountsInput = {
   cart_id: string
@@ -21,14 +25,29 @@ export type BrPricingBreakdown = {
   total: number
 }
 
+type BrDiscountsState = {
+  coins_redeemed: number
+  credit_line_ids: string[]
+}
+
 /**
- * Motor de empilhamento de descontos BR (@BackendMedusa, Fase 1):
+ * Motor de empilhamento de descontos BR (@BackendMedusa, Fase 1-3):
  * cupom de loja + cupom de frete grátis + moedas + desconto Pix (10%),
  * todos aplicados simultaneamente sobre o mesmo carrinho.
  *
- * O total nativo do Medusa (cart.total) continua refletindo apenas
- * preço + frete; o resultado desta função é a referência de cobrança
- * BR e fica salvo em cart.metadata.br_pricing.
+ * O total "de exibição" (br_pricing) agora também é expresso como um
+ * Cart Credit Line real (reference "br_discounts"), que é o mecanismo
+ * nativo do Medusa v2 para abater um valor do cart.total sem mexer na
+ * engine de precificação de item. Isso faz cart.total (e por tabela
+ * payment_collection.amount / order.total no /complete) baterem
+ * exatamente com o número exibido no carrinho e no checkout — sem essa
+ * credit line, cart.total continuava refletindo só preço + frete,
+ * ignorando os descontos BR (gap identificado na Fase 3).
+ *
+ * Idempotente quanto a moedas: só debita/credita a *diferença* em
+ * relação ao último valor de coins_to_redeem salvo no carrinho, já que
+ * o endpoint é chamado de novo a cada toggle no checkout (frete grátis,
+ * cupom, Pix).
  */
 export async function applyBrDiscounts(
   container: MedusaContainer,
@@ -51,18 +70,22 @@ export async function applyBrDiscounts(
     0
   )
 
-  const storeCouponDiscount = Math.min(
-    input.store_coupon_cents || 0,
-    itemTotal
-  )
-
+  const storeCouponDiscount = Math.min(input.store_coupon_cents || 0, itemTotal)
   const freeShippingDiscount = input.free_shipping ? shippingTotal : 0
 
-  let coinsDiscount = 0
-  if (input.coins_to_redeem && cart.customer_id) {
-    coinsDiscount = coinsToCents(input.coins_to_redeem)
-    await debitCoins(customerModuleService, cart.customer_id, input.coins_to_redeem)
+  const prevState = (cart.metadata?.br_discounts_state || null) as BrDiscountsState | null
+  const requestedCoins = input.coins_to_redeem || 0
+  const previouslyRedeemed = prevState?.coins_redeemed || 0
+
+  if (cart.customer_id && requestedCoins !== previouslyRedeemed) {
+    const delta = requestedCoins - previouslyRedeemed
+    if (delta > 0) {
+      await debitCoins(customerModuleService, cart.customer_id, delta)
+    } else if (delta < 0) {
+      await creditCoins(customerModuleService, cart.customer_id, -delta)
+    }
   }
+  const coinsDiscount = cart.customer_id ? coinsToCents(requestedCoins) : 0
 
   const pixDiscount = input.is_pix_selected
     ? Math.round((itemTotal * (input.pix_discount_percent ?? 10)) / 100)
@@ -86,8 +109,43 @@ export async function applyBrDiscounts(
     total,
   }
 
+  // Substitui a credit line anterior pela nova (recalculada a cada chamada).
+  if (prevState?.credit_line_ids?.length) {
+    await deleteCartCreditLinesWorkflow(container).run({
+      input: { id: prevState.credit_line_ids },
+    })
+  }
+
+  const totalDiscount =
+    storeCouponDiscount + freeShippingDiscount + coinsDiscount + pixDiscount
+
+  let newCreditLineIds: string[] = []
+  if (totalDiscount > 0) {
+    // createEntitiesStep internamente faz `data.length ? ... : []` — o
+    // input PRECISA ser um array, apesar do docstring oficial do
+    // workflow mostrar um objeto único (testado via medusa exec:
+    // objeto único silenciosamente cria zero credit lines, sem erro).
+    const { result: creditLines } = await createCartCreditLinesWorkflow(container).run({
+      input: [
+        {
+          cart_id: input.cart_id,
+          amount: totalDiscount,
+          reference: "br_discounts",
+          reference_id: input.cart_id,
+          metadata: { breakdown },
+        },
+      ] as any,
+    })
+    newCreditLineIds = (creditLines || []).map((cl: any) => cl.id)
+  }
+
+  const nextState: BrDiscountsState = {
+    coins_redeemed: requestedCoins,
+    credit_line_ids: newCreditLineIds,
+  }
+
   await cartModuleService.updateCarts(input.cart_id, {
-    metadata: { ...cart.metadata, br_pricing: breakdown },
+    metadata: { ...cart.metadata, br_pricing: breakdown, br_discounts_state: nextState },
   })
 
   return breakdown

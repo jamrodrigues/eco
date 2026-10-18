@@ -43,6 +43,8 @@ export default function ViewportSimulatorToggle() {
           main.viewport-sim-root .md\\:grid-cols-6 { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
           main.viewport-sim-root .hidden.md\\:flex { display: none !important; }
           main.viewport-sim-root .md\\:hidden.fixed { display: flex !important; }
+          main.viewport-sim-root .md\\:flex-row { flex-direction: column !important; }
+          main.viewport-sim-root .md\\:w-\\[480px\\] { width: 100% !important; }
         `}</style>
       )}
     </>

@@ -1,6 +1,6 @@
 import { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
 import { Modules } from "@medusajs/framework/utils"
-import { pixStatusEmitter } from "../../status/[order_id]/emitter"
+import { pixStatusEmitter } from "../../../../pix-status/[order_id]/emitter"
 
 /**
  * POST /store/pix/simulate-pay/:cart_id

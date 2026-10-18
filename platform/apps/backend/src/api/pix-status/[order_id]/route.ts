@@ -11,10 +11,14 @@ import { pixStatusEmitter } from "./emitter"
 export async function GET(req: MedusaRequest, res: MedusaResponse) {
   const { order_id } = req.params
 
+  // Fora do prefixo /store, essa rota não ganha os headers de CORS que o
+  // Medusa aplica automaticamente via storeCors — sem isso o EventSource
+  // do browser falha com erro de CORS (curl não detecta, só o browser).
   res.writeHead(200, {
     "Content-Type": "text/event-stream",
     "Cache-Control": "no-cache",
     Connection: "keep-alive",
+    "Access-Control-Allow-Origin": "*",
   })
   res.write(
     `data: ${JSON.stringify({

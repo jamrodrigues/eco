@@ -44,7 +44,12 @@ export default async function seedBr({
           name: "Brasil",
           currency_code: "brl",
           countries: ["br"],
-          payment_providers: ["pp_system_default"],
+          payment_providers: [
+            "pp_system_default",
+            "pp_pagarme-br_pix_br",
+            "pp_pagarme-br_card_br",
+            "pp_pagarme-br_boleto_br",
+          ],
         },
       ],
     },

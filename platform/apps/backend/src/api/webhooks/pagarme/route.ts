@@ -1,6 +1,6 @@
 import { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
 import { ContainerRegistrationKeys, Modules } from "@medusajs/framework/utils"
-import { pixStatusEmitter } from "../../store/pix/status/[order_id]/emitter"
+import { pixStatusEmitter } from "../../pix-status/[order_id]/emitter"
 
 /**
  * POST /webhooks/pagarme
