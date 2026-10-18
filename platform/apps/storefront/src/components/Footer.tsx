@@ -1,12 +1,23 @@
+import Link from "next/link"
 import { brandConfig } from "@/config/brand.config"
 
 const ATENDIMENTO = [
-  "Central de Ajuda", "Como Comprar", "Como Vender", "Devoluções e Reembolsos",
-  "Entrega", "Pagamento", "Fale Conosco",
+  { label: "Central de Ajuda", slug: "central-de-ajuda" },
+  { label: "Como Comprar", slug: "como-comprar" },
+  { label: "Como Vender", slug: "como-vender" },
+  { label: "Devoluções e Reembolsos", slug: "devolucoes-reembolsos" },
+  { label: "Entrega", slug: "entrega" },
+  { label: "Pagamento", slug: "pagamento" },
+  { label: "Fale Conosco", slug: "fale-conosco" },
 ]
 const SOBRE = [
-  "Sobre Nós", "Políticas", "Carreiras", "Blog", "Vendedores Oficiais",
-  "Marketing e Afiliados", "Imprensa",
+  { label: "Sobre Nós", slug: "sobre-nos" },
+  { label: "Políticas", slug: "politicas" },
+  { label: "Carreiras", slug: "carreiras" },
+  { label: "Blog", slug: "blog" },
+  { label: "Vendedores Oficiais", slug: "vendedores-oficiais" },
+  { label: "Marketing e Afiliados", slug: "marketing-e-afiliados" },
+  { label: "Imprensa", slug: "imprensa" },
 ]
 const PAGAMENTOS = ["Pix", "Visa", "Mastercard", "Elo", "Boleto", "Carteira Digital"]
 const SELOS = ["Site Seguro SSL", "Dados Criptografados", "Compra Garantida"]
@@ -19,7 +30,11 @@ export default function Footer() {
           <h3 className="font-bold text-textPrimary mb-3">Atendimento ao Cliente</h3>
           <ul className="space-y-2 text-textSecondary">
             {ATENDIMENTO.map((item) => (
-              <li key={item}>{item}</li>
+              <li key={item.slug}>
+                <Link href={`/institucional/${item.slug}`} className="hover:text-brand hover:underline">
+                  {item.label}
+                </Link>
+              </li>
             ))}
           </ul>
         </div>
@@ -28,7 +43,11 @@ export default function Footer() {
           <h3 className="font-bold text-textPrimary mb-3">Sobre a {brandConfig.storeName}</h3>
           <ul className="space-y-2 text-textSecondary">
             {SOBRE.map((item) => (
-              <li key={item}>{item}</li>
+              <li key={item.slug}>
+                <Link href={`/institucional/${item.slug}`} className="hover:text-brand hover:underline">
+                  {item.label}
+                </Link>
+              </li>
             ))}
           </ul>
         </div>

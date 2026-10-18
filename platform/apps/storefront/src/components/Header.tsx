@@ -20,9 +20,9 @@ export default function Header() {
       {/* Desktop: 119px (34px top bar + 85px main bar) */}
       <div className="hidden md:block bg-header-gradient text-white h-header">
         <div className="h-headerTopBar max-w-container mx-auto flex items-center justify-end gap-4 px-4 text-xs">
-          <a href="#" className="opacity-90 hover:opacity-100">Central do Vendedor</a>
-          <a href="#" className="opacity-90 hover:opacity-100">Notificações</a>
-          <a href="#" className="opacity-90 hover:opacity-100">Português</a>
+          <Link href="/institucional/central-do-vendedor" className="opacity-90 hover:opacity-100">Central do Vendedor</Link>
+          <Link href="/notificacoes" className="opacity-90 hover:opacity-100">Notificações</Link>
+          <span className="opacity-70 cursor-default">Português</span>
           <Link href="/login" className="opacity-90 hover:opacity-100 font-semibold">Entrar</Link>
         </div>
         <div className="h-headerMainBar max-w-container mx-auto flex items-center gap-6 px-4">
