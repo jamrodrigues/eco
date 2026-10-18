@@ -50,11 +50,29 @@ const PdvPage = () => {
   const [error, setError] = useState<string | null>(null)
   const [receipt, setReceipt] = useState<SaleReceipt | null>(null)
   const [loading, setLoading] = useState(false)
+  const [permitted, setPermitted] = useState<boolean | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    adminFetch<{ permissions: Record<string, unknown> }>("/admin/access-control/me")
+      .then((me) => setPermitted(me.permissions.pdv === true))
+      .catch(() => setPermitted(true)) // modulo indisponivel: nao trava a tela
+  }, [])
 
   useEffect(() => {
     inputRef.current?.focus()
   }, [receipt])
+
+  if (permitted === false) {
+    return (
+      <div style={{ padding: 24 }}>
+        <h1 style={{ fontSize: 20, fontWeight: 700, marginBottom: 8 }}>
+          PDV — Ponto de Venda Físico
+        </h1>
+        <p style={{ color: "#dc2626" }}>Seu papel não tem permissão para acessar o PDV.</p>
+      </div>
+    )
+  }
 
   const total = basket.reduce((sum, item) => sum + item.unit_price * item.quantity, 0)
   const cashReceivedCents = Math.round(Number(cashReceived.replace(",", ".")) * 100) || 0

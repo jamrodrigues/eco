@@ -61,5 +61,8 @@ module.exports = defineConfig({
     {
       resolve: "./src/modules/store-coins",
     },
+    {
+      resolve: "./src/modules/access-control",
+    },
   ],
 })

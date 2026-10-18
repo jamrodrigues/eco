@@ -32,6 +32,7 @@ const InstitutionalPagesPage = () => {
   const [bodyText, setBodyText] = useState("")
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [permitted, setPermitted] = useState<boolean | null>(null)
 
   async function load() {
     setLoading(true)
@@ -49,6 +50,9 @@ const InstitutionalPagesPage = () => {
 
   useEffect(() => {
     load()
+    adminFetch<{ permissions: Record<string, unknown> }>("/admin/access-control/me")
+      .then((me) => setPermitted(me.permissions.institutional_pages === true))
+      .catch(() => setPermitted(true)) // modulo indisponivel: nao trava a tela
   }, [])
 
   function startEdit(page: InstitutionalPage) {
@@ -140,6 +144,19 @@ const InstitutionalPagesPage = () => {
             Cancelar
           </button>
         </div>
+      </div>
+    )
+  }
+
+  if (permitted === false) {
+    return (
+      <div style={{ padding: 24 }}>
+        <h1 style={{ fontSize: 20, fontWeight: 700, marginBottom: 8 }}>
+          Páginas Institucionais
+        </h1>
+        <p style={{ color: "#dc2626" }}>
+          Seu papel não tem permissão para acessar Páginas Institucionais.
+        </p>
       </div>
     )
   }

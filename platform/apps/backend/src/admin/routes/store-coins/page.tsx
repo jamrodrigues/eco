@@ -64,6 +64,8 @@ const StoreCoinsPage = () => {
   const [adjusting, setAdjusting] = useState(false)
   const [adjustError, setAdjustError] = useState<string | null>(null)
 
+  const [permission, setPermission] = useState<true | false | "read_only" | null>(null)
+
   async function loadSettings() {
     const { settings } = await adminFetch<{ settings: Settings }>("/admin/store-coins/settings")
     setSettings(settings)
@@ -71,7 +73,14 @@ const StoreCoinsPage = () => {
 
   useEffect(() => {
     loadSettings()
+    adminFetch<{ permissions: Record<string, true | false | "read_only"> }>(
+      "/admin/access-control/me"
+    )
+      .then((me) => setPermission(me.permissions.store_coins))
+      .catch(() => setPermission(true)) // modulo indisponivel: nao trava a tela
   }, [])
+
+  const readOnly = permission === "read_only"
 
   async function saveSettings() {
     if (!settings) return
@@ -130,9 +139,24 @@ const StoreCoinsPage = () => {
     }
   }
 
+  if (permission === false) {
+    return (
+      <div style={{ padding: 24 }}>
+        <h1 style={{ fontSize: 20, fontWeight: 700, marginBottom: 8 }}>Moedas (Store Coins)</h1>
+        <p style={{ color: "#dc2626" }}>Seu papel não tem permissão para acessar Moedas.</p>
+      </div>
+    )
+  }
+
   return (
     <div style={{ padding: 24, maxWidth: 900 }}>
       <h1 style={{ fontSize: 20, fontWeight: 700, marginBottom: 4 }}>Moedas (Store Coins)</h1>
+      {readOnly && (
+        <p style={{ color: "#b45309", fontSize: 13, marginBottom: 8 }}>
+          Seu papel só tem acesso de leitura aqui — ajustes e configurações ficam bloqueados pelo
+          servidor.
+        </p>
+      )}
       <p style={{ color: "#6b7280", marginBottom: 20, fontSize: 13 }}>
         Programa de cashback/carteira do cliente. Mudanças aqui valem na hora, sem deploy.
       </p>
