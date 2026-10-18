@@ -4,6 +4,7 @@ import ServiceShortcuts from "@/components/ServiceShortcuts"
 import FlashSaleSection from "@/components/FlashSaleSection"
 import ProductGrid from "@/components/ProductGrid"
 import BottomNav from "@/components/BottomNav"
+import Footer from "@/components/Footer"
 import { listProducts } from "@/lib/medusa"
 
 export default async function HomePage() {
@@ -23,6 +24,7 @@ export default async function HomePage() {
         <ProductGrid initialProducts={products} initialCount={count} />
       </section>
 
+      <Footer />
       <BottomNav />
     </>
   )
