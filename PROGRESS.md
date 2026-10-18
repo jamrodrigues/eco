@@ -25,6 +25,8 @@ Itens que apareceram em auditoria pós-Fase 4, antes de abrir a Fase 5:
 - ✅ Retirada na loja física + seletor de modalidade de envio no checkout, nunca tinha sido plugado (`63c600f`)
 - ✅ RBAC real no Admin (4 papéis: Super Admin, Gerente, Operador de PDV, Atendimento+Marketing) + modo manutenção do storefront (`fafd51e`)
 - ✅ Cadastro real de cliente (antes só existia login, zero fluxo de registro), checkout travado a quem tem conta, consentimento LGPD granular (privacidade obrigatória + marketing opcional separados), banner de cookies com opt-in real, e política de privacidade/cookies reescrita no formato LGPD
+- ✅ E-mails transacionais reais (confirmação de pedido, boas-vindas só pra cadastro real, reset de senha) + telas `/esqueci-senha` e `/redefinir-senha` — provider sandbox-first (mesmo padrão do pagarme-br): sem `RESEND_API_KEY` só loga, com a chave manda via Resend de verdade
+- ✅ Bug achado em auditoria visual mobile: Ofertas Relâmpago nunca mostrava a foto real do produto (sempre shimmer); placeholder "sem foto" estático substitui o shimmer (que simulava carregamento infinito); removidos os 52 produtos de teste criados só pra validar rolagem infinita
 
 ## Notas de arquitetura / decisões vivas
 

@@ -230,6 +230,12 @@ function LoginForm() {
               >
                 {submitting ? "Entrando..." : "Entrar"}
               </button>
+              <Link
+                href="/esqueci-senha"
+                className="block text-center text-xs text-textSecondary hover:text-brand"
+              >
+                Esqueci minha senha
+              </Link>
             </form>
           ) : (
             <div className="flex flex-col items-center gap-3 py-2">

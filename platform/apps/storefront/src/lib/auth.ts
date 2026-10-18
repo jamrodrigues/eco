@@ -135,3 +135,29 @@ export async function registerCustomer(opts: {
 
   return loginCustomer(opts.email, opts.password)
 }
+
+/**
+ * Pede o token de redefinição de senha — dispara o fluxo nativo do
+ * Medusa (generateResetPasswordTokenWorkflow), que emite auth.password_reset
+ * e o backend manda o e-mail com o link. Não revela se o e-mail existe
+ * (o próprio endpoint do Medusa não lança erro em identidade inexistente,
+ * de propósito, pra não vazar quais e-mails têm conta).
+ */
+export async function requestPasswordReset(email: string) {
+  await authFetch("/auth/customer/emailpass/reset-password", {
+    method: "POST",
+    body: JSON.stringify({ identifier: email }),
+  })
+}
+
+/**
+ * Confirma a nova senha usando o token recebido por e-mail como Bearer
+ * (não é um login — é o token de reset, com purpose "reset").
+ */
+export async function confirmPasswordReset(token: string, email: string, newPassword: string) {
+  await authFetch("/auth/customer/emailpass/update", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ email, password: newPassword }),
+  })
+}

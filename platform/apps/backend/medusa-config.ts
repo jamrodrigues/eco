@@ -53,6 +53,22 @@ module.exports = defineConfig({
       },
     },
     {
+      resolve: "@medusajs/medusa/notification",
+      options: {
+        providers: [
+          {
+            resolve: "./src/modules/email-notifications",
+            id: "email-notifications",
+            options: {
+              channels: ["email"],
+              apiKey: process.env.RESEND_API_KEY,
+              fromEmail: process.env.NOTIFICATION_FROM_EMAIL,
+            },
+          },
+        ],
+      },
+    },
+    {
       resolve: "./src/modules/franchise-hyperlocal",
     },
     {
