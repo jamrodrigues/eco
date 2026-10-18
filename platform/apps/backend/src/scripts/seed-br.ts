@@ -265,7 +265,7 @@ export default async function seedBr({
           metadata: { original_price_cents: 8990, sale_price_cents: 5394 },
           images: [
             {
-              url: "/images/shopee-assets/products/prod-01-main.jpg",
+              url: "/images/products/prod-01-main.jpg",
             },
           ],
           options: [
