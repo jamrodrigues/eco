@@ -127,7 +127,7 @@ class PagarmeBrService extends AbstractPaymentProvider<PagarmeBrOptions> {
 
   private buildFakePixEmv(sessionId: string, amountCents: number) {
     const amount = (amountCents / 100).toFixed(2)
-    return `00020126580014br.gov.bcb.pix0136${sessionId}5204000053039865406${amount}5802BR5913ShopeeBRLoja6009SAOPAULO62070503***6304${this.crc16Stub()}`
+    return `00020126580014br.gov.bcb.pix0136${sessionId}5204000053039865406${amount}5802BR5912LOJA ONLINE6009SAOPAULO62070503***6304${this.crc16Stub()}`
   }
 
   private buildFakeBoletoLine(sessionId: string, amountCents: number) {

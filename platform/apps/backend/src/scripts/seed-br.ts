@@ -19,13 +19,13 @@ import {
 } from "@medusajs/medusa/core-flows"
 
 /**
- * Seed BR data for the Shopee-style white-label marketplace (Fase 1 /
+ * Seed BR data for the white-label hyperlocal marketplace engine (Fase 1 /
  * @BackendMedusa). Additive: runs alongside Medusa's own scaffolded
  * EU demo seed, it does not remove it.
  *
  * Run with: npm run seed
  */
-export default async function seedShopeeBr({
+export default async function seedBr({
   container,
 }: {
   container: MedusaContainer
@@ -36,7 +36,7 @@ export default async function seedShopeeBr({
   const fulfillmentModuleService = container.resolve(Modules.FULFILLMENT)
   const storeModuleService = container.resolve(Modules.STORE)
 
-  logger.info("[shopee-br] Seeding region Brasil (BRL)...")
+  logger.info("[br] Seeding region Brasil (BRL)...")
   const { result: regionResult } = await createRegionsWorkflow(container).run({
     input: {
       regions: [
@@ -75,7 +75,7 @@ export default async function seedShopeeBr({
     })
   }
 
-  logger.info("[shopee-br] Seeding stock locations (Matriz PDV + CD Franqueado)...")
+  logger.info("[br] Seeding stock locations (Matriz PDV + CD Franqueado)...")
   const { result: stockLocationResult } = await createStockLocationsWorkflow(
     container
   ).run({
@@ -174,14 +174,14 @@ export default async function seedShopeeBr({
     ],
   })
 
-  logger.info("[shopee-br] Seeding sales channels (E-commerce + PDV)...")
+  logger.info("[br] Seeding sales channels (E-commerce + PDV)...")
   const { result: salesChannelResult } = await createSalesChannelsWorkflow(
     container
   ).run({
     input: {
       salesChannelsData: [
         {
-          name: "E-commerce Web & Mobile (Shopee Storefront)",
+          name: "E-commerce Web & Mobile (Storefront)",
           description: "Canal de venda online white-label",
         },
         {
@@ -206,7 +206,7 @@ export default async function seedShopeeBr({
     input: {
       api_keys: [
         {
-          title: "Shopee BR Storefront API Key",
+          title: "Storefront BR API Key",
           type: "publishable",
           created_by: "",
         },
@@ -216,9 +216,9 @@ export default async function seedShopeeBr({
   await linkSalesChannelsToApiKeyWorkflow(container).run({
     input: { id: publishableApiKey.id, add: [ecommerceChannel.id] },
   })
-  logger.info(`[shopee-br] Publishable API key: ${publishableApiKey.token}`)
+  logger.info(`[br] Publishable API key: ${publishableApiKey.token}`)
 
-  logger.info("[shopee-br] Seeding product categories...")
+  logger.info("[br] Seeding product categories...")
   const { result: categoryResult } = await createProductCategoriesWorkflow(
     container
   ).run({
@@ -235,7 +235,7 @@ export default async function seedShopeeBr({
   const catId = (name: string) =>
     categoryResult.find((c) => c.name === name)!.id
 
-  logger.info("[shopee-br] Seeding products (PT-BR)...")
+  logger.info("[br] Seeding products (PT-BR)...")
 
   // Produto âncora: variações de Cor x Tamanho, com G esgotado.
   const cores = ["Preto", "Bege", "Terracota"]
@@ -377,9 +377,9 @@ export default async function seedShopeeBr({
       ],
     },
   })
-  logger.info("[shopee-br] Finished seeding products.")
+  logger.info("[br] Finished seeding products.")
 
-  logger.info("[shopee-br] Seeding inventory levels...")
+  logger.info("[br] Seeding inventory levels...")
   const { data: variants } = await query.graph({
     entity: "product_variant",
     fields: ["id", "sku", "inventory_items.inventory_item_id"],
@@ -406,7 +406,7 @@ export default async function seedShopeeBr({
     input: { inventory_levels: inventoryLevels },
   })
 
-  logger.info("[shopee-br] Seed completo. Produtos, região Brasil (BRL), locais e canais criados.")
+  logger.info("[br] Seed completo. Produtos, região Brasil (BRL), locais e canais criados.")
 }
 
 function buildSimpleProduct(opts: {

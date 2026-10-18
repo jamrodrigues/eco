@@ -2,25 +2,25 @@ version: "3.9"
 services:
   postgres:
     image: postgres:16-alpine
-    container_name: shopee_medusa_postgres
+    container_name: eco_postgres
     restart: unless-stopped
     environment:
       POSTGRES_USER: medusa_user
       POSTGRES_PASSWORD: medusa_password_br
-      POSTGRES_DB: medusa_shopee_br
+      POSTGRES_DB: medusa_br
     ports:
       - "5433:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U medusa_user -d medusa_shopee_br"]
+      test: ["CMD-SHELL", "pg_isready -U medusa_user -d medusa_br"]
       interval: 5s
       timeout: 5s
       retries: 10
 
   redis:
     image: redis:7-alpine
-    container_name: shopee_medusa_redis
+    container_name: eco_redis
     restart: unless-stopped
     ports:
       - "6379:6379"
@@ -32,10 +32,10 @@ services:
 
   meilisearch:
     image: getmeili/meilisearch:v1.10
-    container_name: shopee_medusa_search
+    container_name: eco_search
     restart: unless-stopped
     environment:
-      MEILI_MASTER_KEY: shopee_br_master_key_search
+      MEILI_MASTER_KEY: eco_br_master_key_search
       MEILI_NO_ANALYTICS: "true"
     ports:
       - "7700:7700"
