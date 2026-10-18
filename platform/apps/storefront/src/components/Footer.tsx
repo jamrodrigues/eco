@@ -24,7 +24,8 @@ const SELOS = ["Site Seguro SSL", "Dados Criptografados", "Compra Garantida"]
 
 export default function Footer() {
   return (
-    <footer className="hidden md:block bg-white border-t border-black/[.09] mt-10">
+    <footer className="hidden md:block bg-white mt-10">
+      <div className="h-[3px] bg-brand" />
       <div className="max-w-container mx-auto px-4 py-10 grid grid-cols-5 gap-8 text-sm">
         <div>
           <h3 className="font-bold text-textPrimary mb-3">Atendimento ao Cliente</h3>
