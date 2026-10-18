@@ -1,13 +1,9 @@
 import { notFound } from "next/navigation"
 import Link from "next/link"
-import { institutionalPages } from "@/content/institutional-pages"
+import { getInstitutionalPage } from "@/lib/medusa"
 import Header from "@/components/Header"
 import Footer from "@/components/Footer"
 import BottomNav from "@/components/BottomNav"
-
-export function generateStaticParams() {
-  return Object.keys(institutionalPages).map((slug) => ({ slug }))
-}
 
 export default async function InstitutionalPage({
   params,
@@ -15,8 +11,13 @@ export default async function InstitutionalPage({
   params: Promise<{ slug: string }>
 }) {
   const { slug } = await params
-  const page = institutionalPages[slug]
-  if (!page) notFound()
+
+  let page: { title: string; body: string[] }
+  try {
+    page = await getInstitutionalPage(slug)
+  } catch {
+    notFound()
+  }
 
   return (
     <>

@@ -55,5 +55,8 @@ module.exports = defineConfig({
     {
       resolve: "./src/modules/franchise-hyperlocal",
     },
+    {
+      resolve: "./src/modules/institutional-pages",
+    },
   ],
 })

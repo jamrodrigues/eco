@@ -93,6 +93,12 @@ export async function getShippingByCep(cep: string) {
   }>(`/store/shipping/cep?cep=${cep}`)
 }
 
+export async function getInstitutionalPage(slug: string) {
+  return medusaFetch<{ title: string; body: string[] }>(
+    `/store/institutional-pages/${slug}`
+  )
+}
+
 const PRODUCT_DETAIL_FIELDS = [
   "id",
   "title",
