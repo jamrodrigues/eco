@@ -23,6 +23,7 @@ Itens que apareceram em auditoria pós-Fase 4, antes de abrir a Fase 5:
 - ✅ Moedas (Store Coins) como módulo real com ledger + cashback automático + admin configurável (`f2cbb1a`)
 - ✅ Cupom de loja migrado do hack client-trusted pro módulo nativo de Promotions do Medusa (`f2cbb1a`)
 - ✅ Retirada na loja física + seletor de modalidade de envio no checkout, nunca tinha sido plugado (`63c600f`)
+- ✅ RBAC real no Admin (4 papéis: Super Admin, Gerente, Operador de PDV, Atendimento+Marketing) + modo manutenção do storefront (`fafd51e`)
 
 ## Notas de arquitetura / decisões vivas
 
