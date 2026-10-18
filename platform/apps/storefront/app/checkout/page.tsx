@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import Header from "@/components/Header"
-import { formatBRL } from "@/lib/medusa"
+import { formatBRL, getShippingByCep } from "@/lib/medusa"
 import {
   type Cart,
   type BrPricing,
@@ -26,6 +26,36 @@ import {
 } from "@/lib/cart"
 
 const STANDARD_SHIPPING_OPTION_ID = process.env.NEXT_PUBLIC_STANDARD_SHIPPING_OPTION_ID || ""
+const EXPRESS_SHIPPING_OPTION_ID = process.env.NEXT_PUBLIC_EXPRESS_SHIPPING_OPTION_ID || ""
+const PICKUP_SHIPPING_OPTION_ID = process.env.NEXT_PUBLIC_PICKUP_SHIPPING_OPTION_ID || ""
+
+type ShippingMethodId = "standard" | "express" | "pickup"
+
+const shippingMethodOptions: {
+  id: ShippingMethodId
+  optionId: string
+  label: string
+  description: string
+}[] = [
+  {
+    id: "standard",
+    optionId: STANDARD_SHIPPING_OPTION_ID,
+    label: "Padrão (Transportadora / Correios)",
+    description: "3 a 7 dias úteis",
+  },
+  {
+    id: "express",
+    optionId: EXPRESS_SHIPPING_OPTION_ID,
+    label: "Expresso Local (Motoboy)",
+    description: "mesmo dia / dia seguinte — só na sua cidade",
+  },
+  {
+    id: "pickup",
+    optionId: PICKUP_SHIPPING_OPTION_ID,
+    label: "Retirar na Loja",
+    description: "grátis, Loja Física Matriz",
+  },
+]
 
 type PaymentMethod = "pix" | "card" | "boleto" | "wallet"
 
@@ -45,6 +75,9 @@ export default function CheckoutPage() {
   const [useFreeShipping, setUseFreeShipping] = useState(true)
   const [useCoins, setUseCoins] = useState(false)
   const [method, setMethod] = useState<PaymentMethod>("pix")
+  const [shippingMethod, setShippingMethod] = useState<ShippingMethodId>("standard")
+  const [hyperlocalAvailable, setHyperlocalAvailable] = useState(false)
+  const [changingShipping, setChangingShipping] = useState(false)
   const [placing, setPlacing] = useState(false)
   const [toggling, setToggling] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -106,6 +139,7 @@ export default function CheckoutPage() {
       const alreadyUsingCoins = alreadyRedeemedCoins(fresh) > 0
       setUseCoins(alreadyUsingCoins)
       if (fresh) await recalc(fresh, alreadyUsingCoins, true, true, true, coins_balance)
+      checkHyperlocal(address.postal_code)
     })()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
@@ -130,6 +164,33 @@ export default function CheckoutPage() {
       await recalc(fresh, coinsOn, couponOn, freeShipOn, nextMethod === "pix")
     } finally {
       setToggling(false)
+    }
+  }
+
+  async function checkHyperlocal(postalCode: string) {
+    const digits = postalCode.replace(/\D/g, "")
+    if (digits.length !== 8) return
+    try {
+      const data = await getShippingByCep(digits)
+      setHyperlocalAvailable(data.hyperlocal_match)
+    } catch {
+      setHyperlocalAvailable(false)
+    }
+  }
+
+  async function handleShippingMethodChange(next: ShippingMethodId) {
+    const opt = shippingMethodOptions.find((o) => o.id === next)
+    if (!cart || !opt?.optionId || changingShipping || shippingMethod === next) return
+    setChangingShipping(true)
+    try {
+      await addShippingMethod(cart.id, opt.optionId)
+      setShippingMethod(next)
+      const fresh = await getCartIfExists()
+      if (!fresh) return
+      setCart(fresh)
+      await recalc(fresh, useCoins, useCoupon, useFreeShipping, method === "pix")
+    } finally {
+      setChangingShipping(false)
     }
   }
 
@@ -230,6 +291,7 @@ export default function CheckoutPage() {
                 <input
                   value={address.postal_code}
                   onChange={(e) => setAddress({ ...address, postal_code: e.target.value })}
+                  onBlur={(e) => checkHyperlocal(e.target.value)}
                   placeholder="CEP"
                   className="border border-black/[.09] rounded px-2 py-1.5"
                 />
@@ -276,7 +338,42 @@ export default function CheckoutPage() {
               className="w-full border border-black/[.09] rounded px-2 py-1.5 text-sm mt-2"
               rows={2}
             />
-            <div className="flex items-center justify-between text-sm mt-2">
+
+            <h3 className="text-xs font-semibold text-textSecondary mt-3 mb-1.5">
+              Modalidade de Envio
+            </h3>
+            <div className="space-y-1.5">
+              {shippingMethodOptions.map((opt) => {
+                const disabled =
+                  !opt.optionId ||
+                  changingShipping ||
+                  (opt.id === "express" && !hyperlocalAvailable)
+                return (
+                  <button
+                    key={opt.id}
+                    type="button"
+                    disabled={disabled}
+                    onClick={() => handleShippingMethodChange(opt.id)}
+                    className={`w-full text-left px-3 py-2 rounded border text-sm flex items-center justify-between ${
+                      shippingMethod === opt.id
+                        ? "border-brand text-brand font-semibold bg-brand-light"
+                        : "border-black/[.09]"
+                    } ${disabled ? "opacity-40 cursor-not-allowed" : ""}`}
+                  >
+                    <span>
+                      {opt.label}
+                      <span className="block text-[11px] font-normal text-textSecondary">
+                        {opt.id === "express" && !hyperlocalAvailable
+                          ? "indisponível para este CEP"
+                          : opt.description}
+                      </span>
+                    </span>
+                  </button>
+                )
+              })}
+            </div>
+
+            <div className="flex items-center justify-between text-sm mt-3">
               <span>Frete</span>
               <span>
                 {useFreeShipping ? (
