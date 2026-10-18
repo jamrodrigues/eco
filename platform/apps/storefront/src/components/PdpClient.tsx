@@ -13,6 +13,11 @@ import BottomSheetDrawer from "./BottomSheetDrawer"
 import SellerCard from "./SellerCard"
 import SpecsTable from "./SpecsTable"
 import ReviewsBlock from "./ReviewsBlock"
+import manifest from "../../public/assets/manifest.json"
+
+const manifestImageByHandle: Record<string, { src: string; alt: string }> = {
+  "vestido-midi-canelado-lovito-gola-alta": manifest.products.vestido_lovito_preto,
+}
 
 const SELLER_NAME = "Lovito Brasil Oficial"
 
@@ -69,11 +74,14 @@ export default function PdpClient({ product }: { product: ProductDetail }) {
     }
   }
 
+  const manifestFallback = manifestImageByHandle[product.handle]
   const images = product.images?.length
     ? product.images.map((i) => i.url)
     : product.thumbnail
       ? [product.thumbnail]
-      : []
+      : manifestFallback
+        ? [manifestFallback.src]
+        : []
 
   return (
     <div className="max-w-container mx-auto px-4 py-6 pb-24 md:pb-10">

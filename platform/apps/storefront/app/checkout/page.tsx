@@ -44,6 +44,7 @@ export default function CheckoutPage() {
   const [useCoins, setUseCoins] = useState(false)
   const [method, setMethod] = useState<PaymentMethod>("pix")
   const [placing, setPlacing] = useState(false)
+  const [toggling, setToggling] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   const [address, setAddress] = useState({
@@ -101,19 +102,24 @@ export default function CheckoutPage() {
   async function handleToggle(
     next: Partial<{ coupon: boolean; freeShipping: boolean; coins: boolean; method: PaymentMethod }>
   ) {
-    if (!cart) return
-    const couponOn = next.coupon ?? useCoupon
-    const freeShipOn = next.freeShipping ?? useFreeShipping
-    const coinsOn = next.coins ?? useCoins
-    const nextMethod = next.method ?? method
-    setUseCoupon(couponOn)
-    setUseFreeShipping(freeShipOn)
-    setUseCoins(coinsOn)
-    setMethod(nextMethod)
-    const fresh = await getCartIfExists()
-    if (!fresh) return
-    setCart(fresh)
-    await recalc(fresh, coinsOn, couponOn, freeShipOn, nextMethod === "pix")
+    if (!cart || toggling) return
+    setToggling(true)
+    try {
+      const couponOn = next.coupon ?? useCoupon
+      const freeShipOn = next.freeShipping ?? useFreeShipping
+      const coinsOn = next.coins ?? useCoins
+      const nextMethod = next.method ?? method
+      setUseCoupon(couponOn)
+      setUseFreeShipping(freeShipOn)
+      setUseCoins(coinsOn)
+      setMethod(nextMethod)
+      const fresh = await getCartIfExists()
+      if (!fresh) return
+      setCart(fresh)
+      await recalc(fresh, coinsOn, couponOn, freeShipOn, nextMethod === "pix")
+    } finally {
+      setToggling(false)
+    }
   }
 
   async function handlePlaceOrder() {
@@ -283,7 +289,7 @@ export default function CheckoutPage() {
                 <button
                   key={opt.id}
                   type="button"
-                  disabled={!opt.enabled}
+                  disabled={!opt.enabled || toggling}
                   onClick={() => handleToggle({ method: opt.id })}
                   className={`w-full text-left px-3 py-2.5 rounded border text-sm ${
                     method === opt.id
@@ -309,6 +315,7 @@ export default function CheckoutPage() {
                 <label className="flex items-center gap-1.5 cursor-pointer">
                   <input
                     type="checkbox"
+                    disabled={toggling}
                     checked={useFreeShipping}
                     onChange={(e) => handleToggle({ freeShipping: e.target.checked })}
                   />
@@ -323,6 +330,7 @@ export default function CheckoutPage() {
                 <label className="flex items-center gap-1.5 cursor-pointer">
                   <input
                     type="checkbox"
+                    disabled={toggling}
                     checked={useCoupon}
                     onChange={(e) => handleToggle({ coupon: e.target.checked })}
                   />
@@ -337,6 +345,7 @@ export default function CheckoutPage() {
                 <label className="flex items-center gap-1.5 cursor-pointer">
                   <input
                     type="checkbox"
+                    disabled={toggling}
                     checked={useCoins}
                     onChange={(e) => handleToggle({ coins: e.target.checked })}
                   />

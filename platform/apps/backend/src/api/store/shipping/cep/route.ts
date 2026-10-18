@@ -1,5 +1,7 @@
 import { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
 import { ContainerRegistrationKeys } from "@medusajs/framework/utils"
+import { FRANCHISE_HYPERLOCAL_MODULE } from "../../../../modules/franchise-hyperlocal"
+import { matchFranchiseUnit } from "../../../../modules/franchise-hyperlocal/match-cep"
 
 type ViaCepResponse = {
   cep: string
@@ -41,18 +43,9 @@ export async function GET(req: MedusaRequest, res: MedusaResponse) {
     address = {}
   }
 
-  const query = req.scope.resolve(ContainerRegistrationKeys.QUERY)
-  const { data: stockLocations } = await query.graph({
-    entity: "stock_location",
-    fields: ["id", "name", "address.city"],
-  })
-
-  const buyerCity = (address.localidade || "").trim().toLowerCase()
-  const hasLocalStock =
-    !!buyerCity &&
-    stockLocations.some(
-      (loc: any) => (loc.address?.city || "").trim().toLowerCase() === buyerCity
-    )
+  const franchiseHyperlocalService = req.scope.resolve(FRANCHISE_HYPERLOCAL_MODULE)
+  const franchiseMatch = await matchFranchiseUnit(franchiseHyperlocalService, cep)
+  const hasLocalStock = !!franchiseMatch
 
   const options = [
     {
@@ -84,6 +77,8 @@ export async function GET(req: MedusaRequest, res: MedusaResponse) {
       uf: address.uf || null,
     },
     hyperlocal_match: hasLocalStock,
+    hyperlocal_badge: hasLocalStock ? "⚡ Entrega Hoje na Sua Cidade" : null,
+    franchise_unit: franchiseMatch,
     shipping_options: options,
   })
 }

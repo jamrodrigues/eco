@@ -14,7 +14,10 @@ export default function ViewportSimulatorToggle() {
 
   return (
     <>
-      <div className="fixed bottom-20 md:bottom-4 right-4 z-[60] flex gap-1 bg-black/80 rounded-full p-1 text-xs text-white">
+      <div
+        data-testid="viewport-simulator"
+        className="fixed bottom-20 md:bottom-4 right-4 z-[60] flex gap-1 bg-black/80 rounded-full p-1 text-xs text-white"
+      >
         <button
           onClick={() => setMode("auto")}
           className={`px-3 py-1 rounded-full ${mode === "auto" ? "bg-brand" : ""}`}

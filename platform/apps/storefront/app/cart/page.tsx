@@ -235,6 +235,7 @@ export default function CartPage() {
             <input
               type="checkbox"
               checked={useFreeShipping}
+              disabled={loading}
               onChange={(e) => {
                 setUseFreeShipping(e.target.checked)
                 refreshPricingWith(useCoins, useCoupon, e.target.checked)
@@ -246,6 +247,7 @@ export default function CartPage() {
             <input
               type="checkbox"
               checked={useCoupon}
+              disabled={loading}
               onChange={(e) => {
                 setUseCoupon(e.target.checked)
                 refreshPricingWith(useCoins, e.target.checked, useFreeShipping)
@@ -260,6 +262,7 @@ export default function CartPage() {
             <input
               type="checkbox"
               checked={useCoins}
+              disabled={loading}
               onChange={(e) => handleToggleCoins(e.target.checked)}
             />
           </label>

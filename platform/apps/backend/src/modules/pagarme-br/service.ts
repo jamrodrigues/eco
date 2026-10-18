@@ -1,10 +1,9 @@
 import { AbstractPaymentProvider } from "@medusajs/framework/utils"
 import {
-  CreatePaymentProviderSession,
-  PaymentProviderError,
-  PaymentProviderSessionResponse,
+  InitiatePaymentInput,
+  InitiatePaymentOutput,
   ProviderWebhookPayload,
-  UpdatePaymentProviderSession,
+  UpdatePaymentInput,
   WebhookActionResult,
 } from "@medusajs/framework/types"
 import crypto from "crypto"
@@ -36,8 +35,8 @@ class PagarmeBrService extends AbstractPaymentProvider<PagarmeBrOptions> {
   }
 
   async initiatePayment(
-    input: CreatePaymentProviderSession
-  ): Promise<PaymentProviderSessionResponse | PaymentProviderError> {
+    input: InitiatePaymentInput
+  ): Promise<InitiatePaymentOutput> {
     const amount = Number(input.amount)
     const sessionId = `pagarme_${this.options_.method}_${crypto
       .randomUUID()
@@ -89,7 +88,7 @@ class PagarmeBrService extends AbstractPaymentProvider<PagarmeBrOptions> {
     }
   }
 
-  async authorizePayment(input: any) {
+  async authorizePayment(input: any): Promise<{ data: any; status: "authorized" }> {
     return { data: input.data, status: "authorized" }
   }
 
@@ -113,7 +112,7 @@ class PagarmeBrService extends AbstractPaymentProvider<PagarmeBrOptions> {
     return { data: input.data }
   }
 
-  async updatePayment(input: UpdatePaymentProviderSession) {
+  async updatePayment(input: UpdatePaymentInput) {
     return { data: input.data }
   }
 

@@ -26,7 +26,7 @@ export async function POST(req: MedusaRequest, res: MedusaResponse) {
       id: GUEST_CUSTOMER_ID,
       email: "convidado@dev.local",
       metadata: { store_coins_balance: GUEST_STARTING_COINS },
-    })
+    } as any)
   }
 
   const cart = await cartModuleService.retrieveCart(cartId)

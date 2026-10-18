@@ -33,6 +33,7 @@ export default function SkuSelector({
                     key={value}
                     type="button"
                     disabled
+                    data-testid={`option-${option.title}-${value}`}
                     className="px-3 py-1.5 text-sm rounded border border-dashed border-gray-300 bg-canvas text-gray-300 cursor-not-allowed"
                   >
                     {value}
@@ -45,6 +46,7 @@ export default function SkuSelector({
                   key={value}
                   type="button"
                   onClick={() => onSelect(option.title, value)}
+                  data-testid={`option-${option.title}-${value}`}
                   className={`relative px-3 py-1.5 text-sm rounded border transition-colors ${
                     isSelected
                       ? "border-brand text-brand font-semibold"

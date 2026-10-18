@@ -1,8 +1,16 @@
+import manifest from "../../public/assets/manifest.json"
+
+const heroMain = manifest.banners.hero_main_1
+
 export default function HeroBanner() {
   return (
     <section className="max-w-container mx-auto px-0 md:px-4 mt-0 md:mt-3">
       {/* Mobile: full-bleed single carousel */}
-      <div className="md:hidden relative w-full aspect-[375/180] bg-gradient-to-br from-brand to-[#FF6633] overflow-hidden">
+      <div
+        className="md:hidden relative w-full aspect-[375/180] bg-gradient-to-br from-brand to-[#FF6633] bg-cover bg-center overflow-hidden"
+        style={{ backgroundImage: `url(${heroMain.src})` }}
+      >
+        <div className="absolute inset-0 bg-black/25" />
         <div className="absolute inset-0 flex items-center justify-center text-white font-bold text-lg px-6 text-center">
           Ofertas do dia com frete grátis
         </div>
@@ -15,8 +23,16 @@ export default function HeroBanner() {
 
       {/* Desktop: 2:1 split — carrossel 796x235 + 2 banners 398x115 */}
       <div className="hidden md:flex gap-2.5">
-        <div className="w-[796px] h-[235px] rounded bg-gradient-to-br from-brand to-[#FF6633] flex items-center justify-center text-white font-bold text-2xl">
-          Ofertas do dia com frete grátis
+        <div
+          className="relative w-[796px] h-[235px] rounded bg-gradient-to-br from-brand to-[#FF6633] bg-cover bg-center flex items-center justify-center overflow-hidden"
+          style={{ backgroundImage: `url(${heroMain.src})` }}
+          role="img"
+          aria-label={heroMain.alt}
+        >
+          <div className="absolute inset-0 bg-black/25" />
+          <span className="relative text-white font-bold text-2xl">
+            Ofertas do dia com frete grátis
+          </span>
         </div>
         <div className="flex flex-col gap-2.5">
           <div className="w-[398px] h-[115px] rounded bg-freeShipping/90 flex items-center justify-center text-white font-semibold">

@@ -1,0 +1,16 @@
+{
+  "banners": {
+    "hero_main_1": {
+      "src": "/images/banners/hero-main-01.jpg",
+      "alt": "Campanha Frete Grátis Sem Mínimo - Ofertas Relâmpago",
+      "aspectRatio": "16:9"
+    }
+  },
+  "products": {
+    "vestido_lovito_preto": {
+      "src": "/images/products/prod-01-main.jpg",
+      "alt": "Vestido Midi Canelado Lovito Gola Alta Elegante",
+      "aspectRatio": "1:1"
+    }
+  }
+}

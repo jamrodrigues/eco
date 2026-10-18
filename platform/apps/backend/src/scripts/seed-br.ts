@@ -17,6 +17,7 @@ import {
   linkSalesChannelsToApiKeyWorkflow,
   linkSalesChannelsToStockLocationWorkflow,
 } from "@medusajs/medusa/core-flows"
+import { FRANCHISE_HYPERLOCAL_MODULE } from "../modules/franchise-hyperlocal"
 
 /**
  * Seed BR data for the white-label hyperlocal marketplace engine (Fase 1 /
@@ -399,6 +400,7 @@ export default async function seedBr({
   for (const variant of variants) {
     const isAnchorG = variant.sku?.endsWith("-G")
     for (const item of variant.inventory_items || []) {
+      if (!item) continue
       inventoryLevels.push({
         location_id: matrizLocation.id,
         stocked_quantity: isAnchorG ? 0 : 150,
@@ -410,6 +412,31 @@ export default async function seedBr({
   await createInventoryLevelsWorkflow(container).run({
     input: { inventory_levels: inventoryLevels },
   })
+
+  logger.info("[br] Seeding franchise units (hiperlocal)...")
+  const franchiseHyperlocalService = container.resolve(FRANCHISE_HYPERLOCAL_MODULE)
+  await franchiseHyperlocalService.createFranchiseUnits([
+    {
+      name: "Unidade Matriz (São Paulo Capital)",
+      city: "São Paulo",
+      state: "SP",
+      cep_prefix_start: "01000000",
+      cep_prefix_end: "01999999",
+      stock_location_id: matrizLocation.id,
+      recipient_pagarme_id: null,
+      commission_rate: 0,
+    },
+    {
+      name: "Unidade Campinas (Franqueado Exemplo)",
+      city: "Campinas",
+      state: "SP",
+      cep_prefix_start: "13000000",
+      cep_prefix_end: "13999999",
+      stock_location_id: franqueadoLocation.id,
+      recipient_pagarme_id: "acc_test_campinas_franqueado",
+      commission_rate: 15,
+    },
+  ])
 
   logger.info("[br] Seed completo. Produtos, região Brasil (BRL), locais e canais criados.")
 }
