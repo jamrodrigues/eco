@@ -1,6 +1,6 @@
 import { brandConfig } from "@/config/brand.config"
 
-const items = [
+const defaultItems = [
   { icon: "🪙", label: brandConfig.coinsLabel },
   { icon: "🎟️", label: "Cupons" },
   { icon: "🚚", label: "Frete Grátis" },
@@ -9,6 +9,7 @@ const items = [
 ]
 
 export default function ServiceShortcuts() {
+  const items = brandConfig.serviceShortcuts ?? defaultItems
   return (
     <section className="max-w-container mx-auto px-4 mt-3">
       <div className="flex md:justify-between gap-4 md:gap-0 overflow-x-auto md:overflow-visible pb-1">
