@@ -26,18 +26,19 @@ export default function Header() {
           <Link href="/login" className="opacity-90 hover:opacity-100 font-semibold">Entrar</Link>
         </div>
         <div className="h-headerMainBar max-w-container mx-auto flex items-center gap-6 px-4">
-          <Link href="/" className="flex items-center gap-2 shrink-0">
+          <Link href="/" className="flex items-center shrink-0">
             {brandConfig.logoImagePath ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img
                 src={brandConfig.logoImagePath}
                 alt={brandConfig.storeName}
-                className="h-11 w-11 rounded-full object-cover"
+                className="h-16 w-auto object-contain"
               />
-            ) : null}
-            <span className="text-2xl font-extrabold tracking-tight">
-              {brandConfig.storeName}
-            </span>
+            ) : (
+              <span className="text-2xl font-extrabold tracking-tight">
+                {brandConfig.storeName}
+              </span>
+            )}
           </Link>
           <div className="flex-1 max-w-[840px]">
             <div className="flex items-center bg-white rounded-sm overflow-hidden">
@@ -66,6 +67,16 @@ export default function Header() {
           scrolled ? "bg-white shadow-sm" : "bg-transparent"
         }`}
       >
+        {brandConfig.logoImagePath && (
+          <Link href="/" className="shrink-0">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={brandConfig.logoImagePath}
+              alt={brandConfig.storeName}
+              className={`h-9 w-auto object-contain ${scrolled ? "" : "drop-shadow-[0_1px_3px_rgba(0,0,0,0.5)]"}`}
+            />
+          </Link>
+        )}
         <div
           className={`flex-1 flex items-center rounded-full px-3 py-1.5 ${
             scrolled ? "bg-canvas" : "bg-white/90"

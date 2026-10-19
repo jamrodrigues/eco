@@ -53,7 +53,7 @@ export const brandConfig: BrandConfig = {
     enableHyperlocalCityBadge: true,
     enablePwaInstallPrompt: true,
   },
-  logoImagePath: "/icons/vruumoto-logo-source.png",
+  logoImagePath: "/icons/vruumoto-wordmark-white.png",
   serviceShortcuts: [
     { icon: "⛓️", label: "Kit Relação" },
     { icon: "🛞", label: "Pneus & Câmaras" },
