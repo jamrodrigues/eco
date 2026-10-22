@@ -1,5 +1,6 @@
 import Link from "next/link"
 import { brandConfig } from "@/config/brand.config"
+import MaterialIcon from "./MaterialIcon"
 
 const ATENDIMENTO = [
   { label: "Central de Ajuda", slug: "central-de-ajuda" },
@@ -94,11 +95,18 @@ export default function Footer() {
           © {new Date().getFullYear()} {brandConfig.storeName}. {brandConfig.storeTagline}
         </p>
         {brandConfig.legalName && (
-          <p className="max-w-container mx-auto px-4 text-[11px] text-textSecondary">
-            {brandConfig.legalName}
-            {brandConfig.cnpj && ` — CNPJ ${brandConfig.cnpj}`}
-            {brandConfig.address && ` — ${brandConfig.address}`}
-            {brandConfig.supportEmail && ` — ${brandConfig.supportEmail}`}
+          <p className="max-w-container mx-auto px-4 text-[11px] text-textSecondary flex flex-wrap items-center gap-x-1">
+            <span>
+              {brandConfig.legalName}
+              {brandConfig.cnpj && ` — CNPJ ${brandConfig.cnpj}`}
+            </span>
+            {brandConfig.address && (
+              <span className="flex items-center gap-0.5">
+                <MaterialIcon name="location_on" className="text-xs" />
+                {brandConfig.address}
+              </span>
+            )}
+            {brandConfig.supportEmail && <span>— {brandConfig.supportEmail}</span>}
           </p>
         )}
         {brandConfig.developedByLabel && (

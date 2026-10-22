@@ -85,6 +85,15 @@ export function clearStoredCartId() {
   } catch {
     // ver storeCartId
   }
+  notifyCartChanged()
+}
+
+/** Header escuta esse evento pra atualizar o contador do ícone do carrinho. */
+export const CART_CHANGED_EVENT = "cart:changed"
+
+function notifyCartChanged() {
+  if (typeof window === "undefined") return
+  window.dispatchEvent(new Event(CART_CHANGED_EVENT))
 }
 
 export async function getCartIfExists(): Promise<Cart | null> {
@@ -136,6 +145,7 @@ export async function addLineItem(cartId: string, variantId: string, quantity: n
     method: "POST",
     body: JSON.stringify({ variant_id: variantId, quantity }),
   })
+  notifyCartChanged()
   return cart
 }
 
@@ -144,6 +154,7 @@ export async function updateLineItemQuantity(cartId: string, lineItemId: string,
     `/store/carts/${cartId}/line-items/${lineItemId}`,
     { method: "POST", body: JSON.stringify({ quantity }) }
   )
+  notifyCartChanged()
   return cart
 }
 
@@ -152,6 +163,7 @@ export async function removeLineItem(cartId: string, lineItemId: string) {
     `/store/carts/${cartId}/line-items/${lineItemId}`,
     { method: "DELETE" }
   )
+  notifyCartChanged()
   return cart
 }
 

@@ -20,6 +20,7 @@ import SellerCard from "./SellerCard"
 import SpecsTable from "./SpecsTable"
 import ReviewsBlock from "./ReviewsBlock"
 import MotorcycleFitmentBar from "./MotorcycleFitmentBar"
+import MaterialIcon from "./MaterialIcon"
 import manifest from "../../public/assets/manifest.json"
 
 const manifestImageByHandle: Record<string, { src: string; alt: string }> = {
@@ -152,15 +153,16 @@ export default function PdpClient({ product }: { product: ProductDetail }) {
 
           {brandConfig.features.enableVehicleFitmentFilter && isCompatible !== null && (
             <div
-              className={`mt-3 px-3 py-2 rounded text-sm font-semibold ${
+              className={`mt-3 px-3 py-2 rounded text-sm font-semibold flex items-center gap-1.5 ${
                 isCompatible
                   ? "bg-freeShipping/10 text-freeShipping"
                   : "bg-badgeOfficial/10 text-badgeOfficial"
               }`}
             >
+              <MaterialIcon name={isCompatible ? "check_circle" : "warning"} />
               {isCompatible
-                ? `✅ SERVE NA SUA MOTO: Compatível com ${myBike?.make} ${myBike?.model}`
-                : `⚠️ ATENÇÃO: Esta peça NÃO é compatível com ${myBike?.make} ${myBike?.model} ${myBike?.year}.`}
+                ? `SERVE NA SUA MOTO: Compatível com ${myBike?.make} ${myBike?.model}`
+                : `ATENÇÃO: Esta peça NÃO é compatível com ${myBike?.make} ${myBike?.model} ${myBike?.year}.`}
             </div>
           )}
 
@@ -236,13 +238,13 @@ export default function PdpClient({ product }: { product: ProductDetail }) {
           href="/chat"
           className="w-11 h-11 flex items-center justify-center rounded-full bg-freeShipping/10 text-freeShipping text-lg"
         >
-          💬
+          <MaterialIcon name="chat_bubble" />
         </a>
         <a
           href="/cart"
           className="w-11 h-11 flex items-center justify-center rounded-full bg-canvas text-lg"
         >
-          🛒
+          <MaterialIcon name="shopping_cart" />
         </a>
         <button
           type="button"

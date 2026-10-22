@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import Link from "next/link"
 import Header from "@/components/Header"
 import VariantSwap from "@/components/VariantSwap"
+import MaterialIcon from "@/components/MaterialIcon"
 import { formatBRL } from "@/lib/medusa"
 import {
   type Cart,
@@ -180,7 +181,9 @@ export default function CartPage() {
               OFICIAL
             </span>
             <span className="font-semibold">{SELLER_NAME}</span>
-            <span className="text-textSecondary">| 💬 Conversar</span>
+            <span className="text-textSecondary flex items-center gap-1">
+              | <MaterialIcon name="chat_bubble" className="text-xs" /> Conversar
+            </span>
             {pricing && pricing.store_coupon_discount > 0 && (
               <span className="ml-auto text-brand text-xs">
                 Cupom da Loja Aplicado: {formatBRL(pricing.store_coupon_discount)} OFF

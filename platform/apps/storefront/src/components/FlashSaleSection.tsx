@@ -2,6 +2,7 @@ import Link from "next/link"
 import type { MedusaProduct } from "@/lib/medusa"
 import FlashSaleCountdown from "./FlashSaleCountdown"
 import { deterministicInRange, formatBRL } from "@/lib/medusa"
+import MaterialIcon from "./MaterialIcon"
 
 const SALE_DURATION_MS = 2 * 60 * 60 * 1000 // 2h de simulação
 
@@ -11,7 +12,9 @@ export default function FlashSaleSection({ products }: { products: MedusaProduct
   return (
     <section className="max-w-container mx-auto px-4 mt-4">
       <div className="flex items-center gap-3 mb-2">
-        <h2 className="text-brand font-bold text-lg">⚡ Ofertas Relâmpago</h2>
+        <h2 className="text-brand font-bold text-lg flex items-center gap-1">
+          <MaterialIcon name="bolt" /> Ofertas Relâmpago
+        </h2>
         <FlashSaleCountdown durationMs={SALE_DURATION_MS} />
       </div>
       <div className="flex gap-2.5 overflow-x-auto snap-x">
@@ -35,7 +38,7 @@ export default function FlashSaleSection({ products }: { products: MedusaProduct
                   />
                 ) : (
                   <div className="w-full h-full flex flex-col items-center justify-center gap-1 text-textSecondary">
-                    <span className="text-2xl">📦</span>
+                    <MaterialIcon name="hide_image" className="text-2xl" />
                     <span className="text-[10px]">Sem foto</span>
                   </div>
                 )}
@@ -48,8 +51,8 @@ export default function FlashSaleSection({ products }: { products: MedusaProduct
                     style={{ width: `${sold}%` }}
                   />
                 </div>
-                <p className="text-[10px] text-textSecondary mt-0.5">
-                  🔥 {sold}% VENDIDOS
+                <p className="text-[10px] text-textSecondary mt-0.5 flex items-center gap-0.5">
+                  <MaterialIcon name="local_fire_department" className="text-xs" /> {sold}% VENDIDOS
                 </p>
               </div>
             </Link>

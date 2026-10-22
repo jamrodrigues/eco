@@ -30,6 +30,33 @@ Itens que apareceram em auditoria pós-Fase 4, antes de abrir a Fase 5:
 - ✅ PWA instalável (manifest + service worker + favicon/ícones próprios, antes era o padrão do Next.js) + `scripts/generate-brand-icons.js` reaproveitável pra trocar logo de qualquer marca (`78b405e`, `40f1263`)
 - ✅ E-mails transacionais reais + reset de senha (ver bullet acima — ficou registrado fora de ordem, commit `ba3b539`)
 
+## Débito técnico — portar p/ `main`
+
+Itens feitos em `brand/vruumoto` que são melhoria de engine genérica,
+não característica da loja de moto. Regra: só fica específico de marca
+o que for logo/cores/fitment de moto/textos da Vruumoto — o resto
+(sistema de ícones, componentes, bugfixes de layout) tem que subir pra
+`main` pra beneficiar `EcoShop` e qualquer marca futura.
+
+- ⏳ **Sistema de ícones Material Symbols** (substitui emoji cru por
+  `MaterialIcon` + Google Fonts) — feito em `brand/vruumoto`
+  (`MaterialIcon.tsx`, `globals.css`, `layout.tsx`, `Header.tsx`,
+  `BottomNav.tsx`, `ServiceShortcuts.tsx`, `Footer.tsx`, e emoji→ícone
+  em várias páginas/componentes). Precisa ser portado (cherry-pick ou
+  reimplementação) pra `main`, mantendo só os nomes de ícone
+  específicos de moto (`two_wheeler`, `tire_repair` etc.) do lado
+  Vruumoto via `brand.config.ts`.
+- ⏳ **Header mobile sem logo + busca ocupando largura total** (padrão
+  visual tipo Shopee) — também é layout genérico, não é coisa de moto.
+  Mesma observação: portar pra `main`.
+- ⏳ **Badge de contador de itens no ícone do carrinho** (evento
+  `cart:changed` em `lib/cart.ts`) — genérico, portar pra `main`.
+- ⏳ **Fix de alinhamento do botão de busca desktop** (removeu
+  `items-center`/`py-2` que deixava um gap branco atrás do botão) —
+  bugfix de layout genérico, portar pra `main`.
+
+Não feito ainda (confirmar com o usuário quando for a hora de portar).
+
 ## Fase 5 — branch `brand/vruumoto` (este branch)
 
 Identidade real da Vruumoto (CNPJ 69.233.612/0001-20, Vrumm Motos, Satuba/AL),

@@ -9,6 +9,7 @@ import {
   saveSelectedMotorcycle,
   type SelectedMotorcycle,
 } from "@/data/motorcycle-fitment"
+import MaterialIcon from "./MaterialIcon"
 
 /**
  * "Minha Garagem / Serve na Minha Moto?" — 3 dropdowns encadeados
@@ -50,8 +51,8 @@ export default function MotorcycleFitmentBar({
 
   return (
     <div className="bg-[#18181B] text-white rounded px-4 py-3 flex flex-col md:flex-row items-stretch md:items-center gap-2">
-      <span className="font-semibold text-sm whitespace-nowrap shrink-0">
-        🏍️ Serve na Minha Moto?
+      <span className="font-semibold text-sm whitespace-nowrap shrink-0 flex items-center gap-1">
+        <MaterialIcon name="two_wheeler" /> Serve na Minha Moto?
       </span>
       <div className="flex flex-1 gap-2">
         <select
