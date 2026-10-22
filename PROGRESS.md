@@ -27,6 +27,7 @@ Itens que apareceram em auditoria pós-Fase 4, antes de abrir a Fase 5:
 - ✅ Cadastro real de cliente (antes só existia login, zero fluxo de registro), checkout travado a quem tem conta, consentimento LGPD granular (privacidade obrigatória + marketing opcional separados), banner de cookies com opt-in real, e política de privacidade/cookies reescrita no formato LGPD
 - ✅ E-mails transacionais reais (confirmação de pedido, boas-vindas só pra cadastro real, reset de senha) + telas `/esqueci-senha` e `/redefinir-senha` — provider sandbox-first (mesmo padrão do pagarme-br): sem `RESEND_API_KEY` só loga, com a chave manda via Resend de verdade
 - ✅ Bug achado em auditoria visual mobile: Ofertas Relâmpago nunca mostrava a foto real do produto (sempre shimmer); placeholder "sem foto" estático substitui o shimmer (que simulava carregamento infinito); removidos os 52 produtos de teste criados só pra validar rolagem infinita
+- ✅ Sistema de ícones Material Symbols (`MaterialIcon` + Google Fonts, substitui emoji/Heroicons) + header mobile sem logo com busca full-width + badge de contador no ícone do carrinho + fix de alinhamento do botão de busca desktop — portado de `brand/vruumoto` (engine genérica, sem conteúdo específico da marca Vruumoto).
 
 ## Notas de arquitetura / decisões vivas
 

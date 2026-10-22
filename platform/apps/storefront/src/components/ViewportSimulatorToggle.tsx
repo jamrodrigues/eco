@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import MaterialIcon from "./MaterialIcon"
 
 /**
  * Seletor de simulacao de viewport para homologacao (secao 2 do doc da
@@ -20,15 +21,15 @@ export default function ViewportSimulatorToggle() {
       >
         <button
           onClick={() => setMode("auto")}
-          className={`px-3 py-1 rounded-full ${mode === "auto" ? "bg-brand" : ""}`}
+          className={`px-3 py-1 rounded-full flex items-center gap-1 ${mode === "auto" ? "bg-brand" : ""}`}
         >
-          💻 Desktop
+          <MaterialIcon name="computer" className="text-sm" /> Desktop
         </button>
         <button
           onClick={() => setMode("mobile")}
-          className={`px-3 py-1 rounded-full ${mode === "mobile" ? "bg-brand" : ""}`}
+          className={`px-3 py-1 rounded-full flex items-center gap-1 ${mode === "mobile" ? "bg-brand" : ""}`}
         >
-          📱 375px
+          <MaterialIcon name="smartphone" className="text-sm" /> 375px
         </button>
       </div>
       {mode === "mobile" && (

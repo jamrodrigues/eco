@@ -17,6 +17,24 @@ export interface BrandConfig {
     enableHyperlocalCityBadge: boolean
     enablePwaInstallPrompt: boolean
   }
+  /** Opcional — quando ausente, o Header mostra o storeName em texto. */
+  logoImagePath?: string
+  /**
+   * Opcional — quando ausente, ServiceShortcuts usa a lista genérica.
+   * `icon` e o nome do icone no catalogo Material Symbols
+   * (fonts.google.com/icons), renderizado via <MaterialIcon>.
+   */
+  serviceShortcuts?: { icon: string; label: string }[]
+  /**
+   * Dados legais/institucionais — opcionais. Quando ausentes (ex: branch
+   * `main`, white-label genérico) o Footer não renderiza o bloco legal.
+   */
+  legalName?: string
+  cnpj?: string
+  address?: string
+  supportEmail?: string
+  developedByLabel?: string
+  developedByUrl?: string
 }
 
 export const brandConfig: BrandConfig = {

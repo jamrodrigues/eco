@@ -1,3 +1,5 @@
+import MaterialIcon from "./MaterialIcon"
+
 const metrics = [
   { label: "Avaliações", value: "4.8" },
   { label: "Taxa de Resposta", value: "98%" },
@@ -20,8 +22,8 @@ export default function SellerCard({ sellerName }: { sellerName: string }) {
           <p className="text-xs text-freeShipping">● Online agora</p>
         </div>
         <div className="ml-auto flex gap-2">
-          <button className="px-3 py-1.5 text-xs border border-black/[.09] rounded hover:border-brand">
-            💬 Conversar Agora
+          <button className="px-3 py-1.5 text-xs border border-black/[.09] rounded hover:border-brand flex items-center gap-1">
+            <MaterialIcon name="chat_bubble" className="text-sm" /> Conversar Agora
           </button>
           <button className="px-3 py-1.5 text-xs border border-black/[.09] rounded hover:border-brand">
             Ver Página da Loja

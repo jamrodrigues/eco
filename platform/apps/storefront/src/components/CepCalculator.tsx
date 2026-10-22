@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { getShippingByCep, formatBRL } from "@/lib/medusa"
+import MaterialIcon from "./MaterialIcon"
 
 function maskCep(value: string) {
   const digits = value.replace(/\D/g, "").slice(0, 8)
@@ -71,8 +72,8 @@ export default function CepCalculator() {
             </div>
           ))}
           {result.hyperlocal_match && (
-            <p className="text-freeShipping text-xs font-semibold">
-              🚚 Frete Grátis com cupom disponível para sua região
+            <p className="text-freeShipping text-xs font-semibold flex items-center gap-1">
+              <MaterialIcon name="local_shipping" className="text-sm" /> Frete Grátis com cupom disponível para sua região
             </p>
           )}
         </div>

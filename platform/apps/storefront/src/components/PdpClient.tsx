@@ -13,6 +13,7 @@ import BottomSheetDrawer from "./BottomSheetDrawer"
 import SellerCard from "./SellerCard"
 import SpecsTable from "./SpecsTable"
 import ReviewsBlock from "./ReviewsBlock"
+import MaterialIcon from "./MaterialIcon"
 import manifest from "../../public/assets/manifest.json"
 
 const manifestImageByHandle: Record<string, { src: string; alt: string }> = {
@@ -184,13 +185,13 @@ export default function PdpClient({ product }: { product: ProductDetail }) {
           href="/chat"
           className="w-11 h-11 flex items-center justify-center rounded-full bg-freeShipping/10 text-freeShipping text-lg"
         >
-          💬
+          <MaterialIcon name="chat_bubble" />
         </a>
         <a
           href="/cart"
           className="w-11 h-11 flex items-center justify-center rounded-full bg-canvas text-lg"
         >
-          🛒
+          <MaterialIcon name="shopping_cart" />
         </a>
         <button
           type="button"

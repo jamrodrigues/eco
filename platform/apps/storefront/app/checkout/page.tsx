@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import Header from "@/components/Header"
+import MaterialIcon from "@/components/MaterialIcon"
 import { formatBRL, getShippingByCep } from "@/lib/medusa"
 import {
   type Cart,
@@ -61,11 +62,16 @@ const shippingMethodOptions: {
 
 type PaymentMethod = "pix" | "card" | "boleto" | "wallet"
 
-const paymentOptions: { id: PaymentMethod; label: string; enabled: boolean }[] = [
-  { id: "pix", label: "⚡ PIX (10% OFF EXTRA)", enabled: true },
-  { id: "card", label: "💳 Cartão de Crédito (Até 3x sem juros)", enabled: true },
-  { id: "boleto", label: "📄 Boleto Bancário", enabled: true },
-  { id: "wallet", label: "👛 Carteira Digital", enabled: false },
+const paymentOptions: {
+  id: PaymentMethod
+  icon: string
+  label: string
+  enabled: boolean
+}[] = [
+  { id: "pix", icon: "bolt", label: "PIX (10% OFF EXTRA)", enabled: true },
+  { id: "card", icon: "credit_card", label: "Cartão de Crédito (Até 3x sem juros)", enabled: true },
+  { id: "boleto", icon: "receipt_long", label: "Boleto Bancário", enabled: true },
+  { id: "wallet", icon: "account_balance_wallet", label: "Carteira Digital", enabled: false },
 ]
 
 export default function CheckoutPage() {
@@ -419,12 +425,13 @@ export default function CheckoutPage() {
                   type="button"
                   disabled={!opt.enabled || toggling}
                   onClick={() => handleToggle({ method: opt.id })}
-                  className={`w-full text-left px-3 py-2.5 rounded border text-sm ${
+                  className={`w-full text-left px-3 py-2.5 rounded border text-sm flex items-center gap-2 ${
                     method === opt.id
                       ? "border-brand text-brand font-semibold bg-brand-light"
                       : "border-black/[.09]"
                   } ${!opt.enabled ? "opacity-40 cursor-not-allowed" : ""}`}
                 >
+                  <MaterialIcon name={opt.icon} className="text-base shrink-0" />
                   {opt.label}
                   {!opt.enabled && " — indisponível nesta fase"}
                 </button>
