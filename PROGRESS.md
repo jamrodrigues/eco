@@ -72,10 +72,12 @@ não é placeholder:
   EcoShop).
 - `.env.local` não é versionado — os ids reais gerados pelo seed ficam
   documentados em `platform/apps/storefront/.env.vruumoto.example`.
-- O usuário baixou variantes próprias da logo (`projeto/VRUUMOTO
-  branco.png`, `projeto/VRUUMOTO laranja-fundo.png`) durante esta
-  sessão — não foram usadas ainda, ficam para uma passada futura de
-  regenerar os ícones com `npm run icons -- --logo <arquivo>`.
+- ✅ Ícones PWA/favicon trocados pelos arquivos reais que o usuário
+  gerou (`icon-192`, `icon-512`, `icon-32`, `favicon.ico` — design
+  pneu/roda com wordmark) (`02e6994`).
+- ✅ Logo do header vira o wordmark branco (`VRUUMOTO branco.png`),
+  tira o nome em texto; header da `main`/EcoShop cai no fallback
+  antigo quando `logoImagePath` não existe (`564aeac`).
 
 ## Notas de arquitetura / decisões vivas
 
@@ -86,9 +88,9 @@ não é placeholder:
 
 ## Próximo passo
 
-Os 5 passos originais do plano estão concluídos (`main` + `brand/vruumoto`).
-Pendências conhecidas pra uma próxima rodada: trocar o logo gerado por um
-dos reais que o usuário baixou (`npm run icons -- --logo <arquivo>`),
-revisão jurídica de verdade da política de privacidade (hoje é estrutural,
-com placeholders), e configurar um provider de e-mail real (`RESEND_API_KEY`)
-antes de qualquer deploy em produção.
+Os 5 passos originais do plano estão concluídos (`main` + `brand/vruumoto`),
+incluindo a troca de logo/ícones pelos arquivos reais. Pendências conhecidas
+pra uma próxima rodada, ambas dependem de insumo do usuário (não dá pra
+resolver só com código): revisão jurídica de verdade da política de
+privacidade (hoje é estrutural, com placeholders), e configurar um provider
+de e-mail real (`RESEND_API_KEY`) antes de qualquer deploy em produção.
