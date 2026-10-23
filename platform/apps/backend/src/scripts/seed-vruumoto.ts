@@ -24,9 +24,9 @@ import {
  * Run com: npx medusa exec ./src/scripts/seed-vruumoto.ts
  */
 
-const REGION_ID = "reg_01M57DKSVKE5NSXA1BVS5KD8K2"
-const MATRIZ_LOCATION_ID = "sloc_01M57DKT9RX48PF3PBY9D1JARY"
-const SHIPPING_PROFILE_ID = "sp_01M57DKKJH02MNJ1KKFAR8NWWV"
+const REGION_ID = "reg_01M5N34A51B7AM2P1K7TZM9E43"
+const MATRIZ_LOCATION_ID = "sloc_01M5N34AHR0EA7FCT9W40HQ52R"
+const SHIPPING_PROFILE_ID = "sp_01M5N2ZMQVDHMJFNAA9N7SVW1E"
 
 export default async function seedVruumoto({ container }: { container: MedusaContainer }) {
   const logger = container.resolve(ContainerRegistrationKeys.LOGGER)
