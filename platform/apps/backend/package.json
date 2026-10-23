@@ -14,7 +14,7 @@
   ],
   "scripts": {
     "build": "medusa build",
-    "start": "medusa start",
+    "start": "cd .medusa/server && npm install --omit=dev && npx medusa db:migrate && npx medusa start",
     "dev": "medusa develop",
     "lint": "medusa lint",
     "seed": "medusa exec ./src/scripts/seed-br.ts",
