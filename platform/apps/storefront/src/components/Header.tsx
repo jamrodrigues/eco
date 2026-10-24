@@ -88,6 +88,9 @@ export default function Header() {
           scrolled ? "shadow-sm" : ""
         }`}
       >
+        <Link href="/" className="shrink-0" aria-label={`Ir para a página inicial da ${brandConfig.storeName}`}>
+          <MaterialIcon name="home" className="text-xl" />
+        </Link>
         <div className="flex-1 flex items-center rounded-full px-3 py-1.5 bg-white/95">
           <MaterialIcon name="search" className="text-base mr-2 text-textSecondary" />
           <input
