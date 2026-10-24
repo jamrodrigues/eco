@@ -24,7 +24,7 @@ import {
   alreadyRedeemedCoins,
 } from "@/lib/cart"
 
-const SELLER_NAME = "Lovito Brasil Oficial"
+const SELLER_NAME = "Vruumoto Oficial"
 
 export default function CartPage() {
   const router = useRouter()
@@ -192,51 +192,56 @@ export default function CartPage() {
           </div>
 
           {cart.items.map((item) => (
-            <div
-              key={item.id}
-              className="px-4 py-3 flex items-center gap-3 border-b border-black/[.06] last:border-0"
-            >
-              <input type="checkbox" checked readOnly />
-              {item.thumbnail ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={item.thumbnail} alt="" className="w-16 h-16 rounded object-cover" />
-              ) : (
-                <div className="w-16 h-16 rounded shimmer" />
-              )}
-              <div className="flex-1 min-w-0">
-                <p className="text-sm line-clamp-2">{item.title}</p>
-                <VariantSwap
-                  productHandle={item.product_handle}
-                  currentVariantId={item.variant_id}
-                  currentVariantTitle={item.variant_title}
-                  onSwap={(variantId) => handleSwap(item.id, variantId, item.quantity)}
-                />
+            <div key={item.id} className="px-4 py-3 border-b border-black/[.06] last:border-0">
+              <div className="flex items-start gap-3">
+                <input type="checkbox" checked readOnly className="mt-1 shrink-0" />
+                {item.thumbnail ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={item.thumbnail}
+                    alt=""
+                    className="w-16 h-16 rounded object-cover shrink-0"
+                  />
+                ) : (
+                  <div className="w-16 h-16 rounded shimmer shrink-0" />
+                )}
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm line-clamp-2">{item.title}</p>
+                  <VariantSwap
+                    productHandle={item.product_handle}
+                    currentVariantId={item.variant_id}
+                    currentVariantTitle={item.variant_title}
+                    onSwap={(variantId) => handleSwap(item.id, variantId, item.quantity)}
+                  />
+                </div>
               </div>
-              <span className="text-sm w-24 text-right">{formatBRL(item.unit_price)}</span>
-              <div className="flex items-center border border-black/[.09] rounded">
+              <div className="flex items-center flex-wrap justify-between gap-2 mt-2 pl-7">
+                <span className="text-sm text-textSecondary">{formatBRL(item.unit_price)}</span>
+                <div className="flex items-center border border-black/[.09] rounded">
+                  <button
+                    onClick={() => handleQuantityChange(item.id, Math.max(1, item.quantity - 1))}
+                    className="w-7 h-7 text-sm"
+                  >
+                    −
+                  </button>
+                  <span className="w-8 text-center text-sm">{item.quantity}</span>
+                  <button
+                    onClick={() => handleQuantityChange(item.id, item.quantity + 1)}
+                    className="w-7 h-7 text-sm"
+                  >
+                    +
+                  </button>
+                </div>
+                <span className="text-brand font-semibold">
+                  {formatBRL(item.unit_price * item.quantity)}
+                </span>
                 <button
-                  onClick={() => handleQuantityChange(item.id, Math.max(1, item.quantity - 1))}
-                  className="w-7 h-7 text-sm"
+                  onClick={() => handleRemove(item.id)}
+                  className="text-textSecondary text-xs hover:text-brand"
                 >
-                  −
-                </button>
-                <span className="w-8 text-center text-sm">{item.quantity}</span>
-                <button
-                  onClick={() => handleQuantityChange(item.id, item.quantity + 1)}
-                  className="w-7 h-7 text-sm"
-                >
-                  +
+                  Remover
                 </button>
               </div>
-              <span className="text-brand font-semibold w-24 text-right">
-                {formatBRL(item.unit_price * item.quantity)}
-              </span>
-              <button
-                onClick={() => handleRemove(item.id)}
-                className="text-textSecondary text-xs hover:text-brand"
-              >
-                Remover
-              </button>
             </div>
           ))}
         </div>
