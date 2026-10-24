@@ -54,7 +54,7 @@ export default function MotorcycleFitmentBar({
       <span className="font-semibold text-sm whitespace-nowrap shrink-0 flex items-center gap-1">
         <MaterialIcon name="two_wheeler" /> Serve na Minha Moto?
       </span>
-      <div className="flex flex-1 gap-2">
+      <div className="flex flex-1 gap-2 min-w-0">
         <select
           value={make}
           onChange={(e) => {
@@ -62,7 +62,7 @@ export default function MotorcycleFitmentBar({
             setModel("")
             commit(e.target.value, "", year)
           }}
-          className="flex-1 bg-white/10 border border-white/20 rounded px-2 py-1.5 text-sm"
+          className="flex-1 min-w-0 bg-white/10 border border-white/20 rounded px-2 py-1.5 text-sm truncate"
         >
           <option value="">Montadora</option>
           {MOTORCYCLE_MAKES.map((m) => (
@@ -78,7 +78,7 @@ export default function MotorcycleFitmentBar({
             setModel(e.target.value)
             commit(make, e.target.value, year)
           }}
-          className="flex-1 bg-white/10 border border-white/20 rounded px-2 py-1.5 text-sm disabled:opacity-40"
+          className="flex-1 min-w-0 bg-white/10 border border-white/20 rounded px-2 py-1.5 text-sm disabled:opacity-40 truncate"
         >
           <option value="">Modelo</option>
           {models.map((m) => (
@@ -94,7 +94,7 @@ export default function MotorcycleFitmentBar({
             setYear(e.target.value)
             commit(make, model, e.target.value)
           }}
-          className="flex-1 bg-white/10 border border-white/20 rounded px-2 py-1.5 text-sm disabled:opacity-40"
+          className="flex-1 min-w-0 bg-white/10 border border-white/20 rounded px-2 py-1.5 text-sm disabled:opacity-40 truncate"
         >
           <option value="">Ano</option>
           {MOTORCYCLE_YEARS.map((y) => (

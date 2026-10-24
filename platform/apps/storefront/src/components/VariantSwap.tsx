@@ -25,14 +25,14 @@ export default function VariantSwap({
   }
 
   return (
-    <label className="text-xs text-textSecondary flex items-center gap-1">
-      Variação:
+    <label className="text-xs text-textSecondary flex items-center gap-1 min-w-0">
+      <span className="shrink-0">Variação:</span>
       <select
         value={currentVariantId}
         onChange={(e) => {
           if (e.target.value !== currentVariantId) onSwap(e.target.value)
         }}
-        className="border border-black/[.09] rounded px-1.5 py-0.5 text-xs"
+        className="border border-black/[.09] rounded px-1.5 py-0.5 text-xs min-w-0 max-w-full flex-1 truncate"
       >
         {product.variants.map((v) => (
           <option key={v.id} value={v.id} disabled={v.inventory_quantity === 0}>
