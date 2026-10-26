@@ -20,7 +20,7 @@ import {
   createPaymentCollection,
   createPaymentSession,
   completeCart,
-  PAYMENT_PROVIDER_IDS,
+  getPaymentProviderId,
   trueAvailableCoins,
   alreadyRedeemedCoins,
   clearStoredCartId,
@@ -93,6 +93,7 @@ export default function CheckoutPage() {
     province: "SP",
     postal_code: "01310-100",
     country_code: "br",
+    cpf: "",
   })
   const [email, setEmail] = useState("")
 
@@ -226,10 +227,14 @@ export default function CheckoutPage() {
       await recalc(cart, useCoins, useCoupon, useFreeShipping, method === "pix")
 
       const paymentCollection = await createPaymentCollection(cart.id)
-      const session = await createPaymentSession(
-        paymentCollection.id,
-        PAYMENT_PROVIDER_IDS[method as keyof typeof PAYMENT_PROVIDER_IDS]
-      )
+      const providerId = await getPaymentProviderId(method as "pix" | "card" | "boleto")
+      const sessionData =
+        method === "boleto"
+          ? { payer_cpf: address.cpf.replace(/\D/g, ""), cart_id: cart.id }
+          : method === "pix"
+            ? { cart_id: cart.id }
+            : undefined // card: Task 11 fills this with { token, installments }
+      const session = await createPaymentSession(paymentCollection.id, providerId, sessionData)
 
       if (method === "pix" && session) {
         try {
@@ -337,6 +342,13 @@ export default function CheckoutPage() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="E-mail"
+                  className="col-span-2 border border-black/[.09] rounded px-2 py-1.5"
+                />
+                <input
+                  value={address.cpf}
+                  onChange={(e) => setAddress({ ...address, cpf: e.target.value })}
+                  placeholder="CPF (obrigatório para Boleto)"
+                  required={method === "boleto"}
                   className="col-span-2 border border-black/[.09] rounded px-2 py-1.5"
                 />
               </div>
