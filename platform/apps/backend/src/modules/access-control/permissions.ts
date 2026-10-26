@@ -10,6 +10,7 @@ export type PermissionCategory =
   | "institutional_pages"
   | "settings"
   | "maintenance_mode"
+  | "payment_gateway"
   | "user_management"
 
 export type RoleSlug = "super_admin" | "gerente" | "operador_pdv" | "atendimento_marketing"
@@ -26,6 +27,7 @@ const ALL_TRUE: PermissionMap = {
   institutional_pages: true,
   settings: true,
   maintenance_mode: true,
+  payment_gateway: true,
   user_management: true,
 }
 
@@ -48,6 +50,7 @@ export const ROLE_DEFINITIONS: { slug: RoleSlug; name: string; permissions: Perm
       ...ALL_TRUE,
       settings: false,
       maintenance_mode: false,
+      payment_gateway: false,
       user_management: false,
     },
   },
@@ -64,6 +67,7 @@ export const ROLE_DEFINITIONS: { slug: RoleSlug; name: string; permissions: Perm
       institutional_pages: false,
       settings: false,
       maintenance_mode: false,
+      payment_gateway: false,
       user_management: false,
     },
   },
@@ -80,6 +84,7 @@ export const ROLE_DEFINITIONS: { slug: RoleSlug; name: string; permissions: Perm
       institutional_pages: true,
       settings: false,
       maintenance_mode: false,
+      payment_gateway: false,
       user_management: false,
     },
   },
@@ -122,6 +127,7 @@ const PREFIX_MAP: [string, PermissionCategory][] = [
   ["/admin/shipping-profiles", "settings"],
   ["/admin/fulfillment", "settings"],
   ["/admin/access-control/maintenance", "maintenance_mode"],
+  ["/admin/access-control/payment-gateway", "payment_gateway"],
   ["/admin/users", "user_management"],
   ["/admin/invites", "user_management"],
   ["/admin/access-control/users", "user_management"],
