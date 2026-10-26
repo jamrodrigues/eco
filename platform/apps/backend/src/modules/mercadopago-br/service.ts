@@ -1,4 +1,7 @@
-import { AbstractPaymentProvider } from "@medusajs/framework/utils"
+import {
+  AbstractPaymentProvider,
+  MedusaError,
+} from "@medusajs/framework/utils"
 import {
   InitiatePaymentInput,
   InitiatePaymentOutput,
@@ -86,6 +89,53 @@ class MercadoPagoBrService extends AbstractPaymentProvider<MercadoPagoBrOptions>
           qr_code_base64:
             response.point_of_interaction.transaction_data.qr_code_base64,
           expires_at: response.date_of_expiration,
+          status: this.mapMpStatus(response.status),
+          sandbox: this.isSandbox(),
+        },
+      }
+    }
+
+    if (this.options_.method === "boleto") {
+      const payerCpf = (input.data as any)?.payer_cpf
+
+      if (!payerCpf) {
+        throw new MedusaError(
+          MedusaError.Types.INVALID_DATA,
+          "CPF obrigatório para boleto"
+        )
+      }
+
+      const response = await mpRequest<{
+        id: number
+        status: string
+        date_of_expiration: string
+        transaction_details: {
+          external_resource_url: string
+          barcode: { content: string }
+        }
+      }>("/v1/payments", {
+        method: "POST",
+        accessToken: this.options_.accessToken || "",
+        body: JSON.stringify({
+          transaction_amount: Number(input.amount) / 100,
+          payment_method_id: "bolbradesco",
+          payer: {
+            email: input.context?.customer?.email || "guest@checkout.local",
+            identification: { type: "CPF", number: payerCpf },
+          },
+          description: "Pedido loja",
+        }),
+      })
+
+      return {
+        id: `mercadopago_boleto_${response.id}`,
+        data: {
+          id: `mercadopago_boleto_${response.id}`,
+          mp_payment_id: response.id,
+          cart_id: (input.data as any)?.cart_id,
+          provider_method: "boleto",
+          linha_digitavel: response.transaction_details.barcode.content,
+          due_date: response.date_of_expiration,
           status: this.mapMpStatus(response.status),
           sandbox: this.isSandbox(),
         },
