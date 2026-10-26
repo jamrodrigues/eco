@@ -195,7 +195,8 @@ export type PixSessionData = {
 
 export async function createPaymentSession(
   paymentCollectionId: string,
-  providerId: string
+  providerId: string,
+  data?: Record<string, unknown>
 ) {
   const { payment_collection } = await fetchJson<{
     payment_collection: {
@@ -203,7 +204,7 @@ export async function createPaymentSession(
     }
   }>(`/store/payment-collections/${paymentCollectionId}/payment-sessions`, {
     method: "POST",
-    body: JSON.stringify({ provider_id: providerId }),
+    body: JSON.stringify({ provider_id: providerId, data }),
   })
   const session = payment_collection.payment_sessions.find(
     (s) => s.provider_id === providerId
@@ -211,11 +212,30 @@ export async function createPaymentSession(
   return session
 }
 
-export const PAYMENT_PROVIDER_IDS = {
-  pix: "pp_pagarme-br_pix_br",
-  card: "pp_pagarme-br_card_br",
-  boleto: "pp_pagarme-br_boleto_br",
+const PAYMENT_PROVIDER_IDS_BY_GATEWAY = {
+  mercadopago: {
+    pix: "pp_mercadopago-br_pix_br",
+    card: "pp_mercadopago-br_card_br",
+    boleto: "pp_mercadopago-br_boleto_br",
+  },
+  pagarme: {
+    pix: "pp_pagarme-br_pix_br",
+    card: "pp_pagarme-br_card_br",
+    boleto: "pp_pagarme-br_boleto_br",
+  },
 } as const
+
+export async function fetchActivePaymentGateway(): Promise<"mercadopago" | "pagarme"> {
+  const { active_gateway } = await fetchJson<{ active_gateway: "mercadopago" | "pagarme" }>(
+    "/store/payment-gateway-status"
+  )
+  return active_gateway
+}
+
+export async function getPaymentProviderId(method: "pix" | "card" | "boleto"): Promise<string> {
+  const gateway = await fetchActivePaymentGateway()
+  return PAYMENT_PROVIDER_IDS_BY_GATEWAY[gateway][method]
+}
 
 /**
  * O saldo retornado por ensureGuestCustomer já reflete qualquer resgate
