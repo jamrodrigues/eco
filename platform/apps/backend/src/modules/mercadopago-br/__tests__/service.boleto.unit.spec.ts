@@ -25,7 +25,27 @@ describe("MercadoPagoBrService — boleto", () => {
     })
     const svc = makeService()
     const result = await svc.initiatePayment({ amount: 1000, currency_code: "brl", data: { payer_cpf: "11111111111" } } as any)
-    expect(result.data.linha_digitavel).toBe("341912345...")
-    expect(result.data.due_date).toBe("2026-10-30T00:00:00Z")
+    expect(result.data!.linha_digitavel).toBe("341912345...")
+    expect(result.data!.due_date).toBe("2026-10-30T00:00:00Z")
+  })
+
+  it("sends the real Medusa session id + cart id as MP metadata and idempotency key", async () => {
+    ;(client.mpRequest as jest.Mock).mockClear()
+    ;(client.mpRequest as jest.Mock).mockResolvedValue({
+      id: 778,
+      status: "pending",
+      date_of_expiration: "2026-10-30T00:00:00Z",
+      transaction_details: { external_resource_url: "u", barcode: { content: "b" } },
+    })
+    const svc = makeService()
+    await svc.initiatePayment({
+      amount: 1000,
+      currency_code: "brl",
+      data: { payer_cpf: "11111111111", cart_id: "cart_b", session_id: "payses_BOL" },
+      context: { idempotency_key: "payses_BOL" },
+    } as any)
+    const [, options] = (client.mpRequest as jest.Mock).mock.calls[0]
+    expect(JSON.parse(options.body).metadata).toEqual({ medusa_session_id: "payses_BOL", cart_id: "cart_b" })
+    expect(options.headers["X-Idempotency-Key"]).toBe("payses_BOL")
   })
 })
