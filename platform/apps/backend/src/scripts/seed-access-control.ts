@@ -3,6 +3,21 @@ import { ContainerRegistrationKeys, Modules } from "@medusajs/framework/utils"
 import { ACCESS_CONTROL_MODULE } from "../modules/access-control"
 import { ROLE_DEFINITIONS } from "../modules/access-control/permissions"
 
+/** Chaves presentes na definição mas ausentes na linha já existente. */
+export function missingPermissions(
+  existing: Record<string, unknown> | null | undefined,
+  defined: Record<string, unknown>
+): Record<string, unknown> {
+  const current = existing ?? {}
+  const missing: Record<string, unknown> = {}
+  for (const [key, value] of Object.entries(defined)) {
+    if (!Object.prototype.hasOwnProperty.call(current, key)) {
+      missing[key] = value
+    }
+  }
+  return missing
+}
+
 /**
  * Seed dos 4 papéis fixos + atribui super_admin pro primeiro usuário
  * admin existente (rede de segurança — usuário sem papel já cai em
@@ -18,7 +33,23 @@ export default async function seedAccessControl({ container }: { container: Medu
   for (const def of ROLE_DEFINITIONS) {
     const existing = await accessControlService.listRoles({ slug: def.slug })
     if (existing.length) {
-      roleIdBySlug[def.slug] = existing[0].id
+      const role = existing[0]
+      roleIdBySlug[def.slug] = role.id
+
+      // Papéis já semeados não ganham sozinhos as chaves de permissão novas
+      // (ex.: `payment_gateway`) — e `isAllowed` trata chave ausente como
+      // negado. Adiciona só as chaves que faltam, sem sobrescrever nenhum
+      // valor que já exista na linha.
+      const missing = missingPermissions(role.permissions, def.permissions)
+      if (Object.keys(missing).length) {
+        await accessControlService.updateRoles({
+          id: role.id,
+          permissions: { ...missing, ...(role.permissions ?? {}) },
+        })
+        logger.info(
+          `[access-control] Papel ${def.name}: permissões adicionadas (${Object.keys(missing).join(", ")})`
+        )
+      }
       continue
     }
     const [created] = await accessControlService.createRoles([
