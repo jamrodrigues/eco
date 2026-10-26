@@ -641,7 +641,7 @@ git commit -m "feat(backend): mercadopago-br provider — card method with decli
 
 **Interfaces:**
 - Produces: `fetchActivePaymentGateway(): Promise<"mercadopago" | "pagarme">` (calls `GET /store/payment-gateway-status` from Task 3); `getPaymentProviderId(method: "pix" | "card" | "boleto"): Promise<string>`; `createPaymentSession(paymentCollectionId: string, providerId: string, data?: Record<string, unknown>)` (adds the optional `data` param Task 8/11 need to pass `token`/`installments`/`payer_cpf`/`cart_id` through).
-- Consumes (Task 11): replaces the current `PAYMENT_PROVIDER_IDS` constant and the plain `method -> providerId` lookup in `checkout/page.tsx:237`.
+- Consumes (Task 10): replaces the current `PAYMENT_PROVIDER_IDS` constant and the plain `method -> providerId` lookup in `checkout/page.tsx:237`.
 
 - [ ] **Step 1: Replace `PAYMENT_PROVIDER_IDS` with a per-gateway map and the resolver**
 
