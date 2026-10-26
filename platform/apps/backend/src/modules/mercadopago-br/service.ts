@@ -145,6 +145,14 @@ class MercadoPagoBrService extends AbstractPaymentProvider<MercadoPagoBrOptions>
     if (this.options_.method === "card") {
       const token = (input.data as any)?.token
       const installments = (input.data as any)?.installments
+      const paymentMethodId = (input.data as any)?.payment_method_id
+
+      if (!paymentMethodId) {
+        throw new MedusaError(
+          MedusaError.Types.INVALID_DATA,
+          "payment_method_id obrigatório"
+        )
+      }
 
       const response = await mpRequest<{
         id: number
@@ -157,6 +165,7 @@ class MercadoPagoBrService extends AbstractPaymentProvider<MercadoPagoBrOptions>
           transaction_amount: Number(input.amount) / 100,
           token,
           installments,
+          payment_method_id: paymentMethodId,
           payer: {
             email: input.context?.customer?.email || "guest@checkout.local",
           },
