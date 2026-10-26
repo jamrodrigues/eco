@@ -42,7 +42,13 @@ const MP_PUBLIC_KEY = process.env.NEXT_PUBLIC_MP_PUBLIC_KEY || ""
  * never reaches this page's JS context, only MP's own iframes) and
  * `createCardToken`, per MP's current "Checkout API" Core Methods guide.
  */
-type MpFieldElement = { unmount: () => void }
+type MpFieldElement = {
+  unmount: () => void
+  // `binChange` fires as the shopper types a card number into the Secure
+  // Field iframe — it's how we learn the card's BIN (first 6 digits)
+  // *without* ever reading the PAN ourselves, per MP's Core Methods guide.
+  on: (event: "binChange", callback: (data: { bin: string }) => void) => void
+}
 type MpFieldBuilder = { mount: (elementId: string) => MpFieldElement }
 type MpTokenizeError = { cause?: { code?: string; description?: string }[]; message?: string }
 type MpInstance = {
@@ -54,6 +60,7 @@ type MpInstance = {
       identificationNumber: string
     }) => Promise<{ id: string }>
   }
+  getPaymentMethods: (data: { bin: string }) => Promise<{ results: { id: string }[] }>
 }
 
 declare global {
@@ -152,6 +159,7 @@ export default function CheckoutPage() {
 
   const [cardHolderName, setCardHolderName] = useState("")
   const [installments, setInstallments] = useState(1)
+  const [paymentMethodId, setPaymentMethodId] = useState<string | null>(null)
   const [mpReady, setMpReady] = useState(false)
   const mpRef = useRef<MpInstance | null>(null)
   const mpFieldsRef = useRef<{
@@ -246,15 +254,24 @@ export default function CheckoutPage() {
   // desta página, só ao iframe da MP) só quando o método "card" está
   // selecionado e o SDK já carregou. Desmonta ao trocar de método/sair
   // da página pra não deixar iframes órfãos.
+  //
+  // O listener `binChange` no field de número do cartão é como
+  // descobrimos a bandeira (payment_method_id, ex: "master"/"visa") sem
+  // nunca ler o PAN: a MP só nos entrega o BIN (6 primeiros dígitos) do
+  // cartão sendo digitado, e `mp.getPaymentMethods({ bin })` devolve os
+  // métodos de pagamento compatíveis com esse BIN — mesmo mecanismo do
+  // guia oficial "Checkout API / Core Methods".
   useEffect(() => {
     if (!mpReady || method !== "card") return
     const mp = mpRef.current
     if (!mp) return
 
+    setPaymentMethodId(null)
     const fieldStyle = { style: { fontSize: "14px", color: "#111827" } }
-    mpFieldsRef.current.cardNumber = mp.fields
+    const cardNumberField = mp.fields
       .create("cardNumber", { placeholder: "0000 0000 0000 0000", ...fieldStyle })
       .mount("mp-card-number")
+    mpFieldsRef.current.cardNumber = cardNumberField
     mpFieldsRef.current.expirationDate = mp.fields
       .create("expirationDate", { placeholder: "MM/AA", ...fieldStyle })
       .mount("mp-card-expiry")
@@ -262,23 +279,42 @@ export default function CheckoutPage() {
       .create("securityCode", { placeholder: "CVV", ...fieldStyle })
       .mount("mp-card-cvv")
 
+    cardNumberField.on("binChange", async (data) => {
+      if (!data.bin) {
+        setPaymentMethodId(null)
+        return
+      }
+      try {
+        const { results } = await mp.getPaymentMethods({ bin: data.bin })
+        setPaymentMethodId(results?.[0]?.id ?? null)
+      } catch {
+        setPaymentMethodId(null)
+      }
+    })
+
     return () => {
       mpFieldsRef.current.cardNumber?.unmount()
       mpFieldsRef.current.expirationDate?.unmount()
       mpFieldsRef.current.securityCode?.unmount()
       mpFieldsRef.current = {}
+      setPaymentMethodId(null)
     }
   }, [mpReady, method])
 
   /**
    * Tokeniza o cartão no cliente via Mercado Pago (nunca manda número,
    * validade ou CVV pro nosso backend — só o token de uso único que a
-   * própria MP gera). Erros de validação (cartão inválido, vencido, CVV
-   * errado, CPF faltando) são pegos aqui e lançados com mensagem em
+   * própria MP gera, mais a bandeira detectada via BIN). Erros de
+   * validação (cartão inválido, vencido, CVV errado, CPF faltando,
+   * bandeira não identificada) são pegos aqui e lançados com mensagem em
    * pt-BR; quem chama deixa isso cair no catch de handlePlaceOrder, que
    * já exibe via setError.
    */
-  async function tokenizeCard(): Promise<{ token: string; installments: number }> {
+  async function tokenizeCard(): Promise<{
+    token: string
+    installments: number
+    payment_method_id: string
+  }> {
     const mp = mpRef.current
     if (!mp) {
       throw new Error(
@@ -292,6 +328,11 @@ export default function CheckoutPage() {
     if (!cpfDigits) {
       throw new Error("Informe o CPF do titular do cartão (campo CPF acima).")
     }
+    if (!paymentMethodId) {
+      throw new Error(
+        "Não foi possível identificar a bandeira do cartão. Verifique o número digitado."
+      )
+    }
 
     try {
       const token = await mp.fields.createCardToken({
@@ -299,7 +340,7 @@ export default function CheckoutPage() {
         identificationType: "CPF",
         identificationNumber: cpfDigits,
       })
-      return { token: token.id, installments }
+      return { token: token.id, installments, payment_method_id: paymentMethodId }
     } catch (err) {
       throw new Error(describeMpTokenError(err))
     }
@@ -612,6 +653,11 @@ export default function CheckoutPage() {
                   id="mp-card-number"
                   className="border border-black/[.09] rounded px-2 py-1.5 text-sm h-[38px]"
                 />
+                {paymentMethodId && (
+                  <p className="text-[11px] text-textSecondary">
+                    Bandeira detectada: {paymentMethodId}
+                  </p>
+                )}
                 <div className="grid grid-cols-2 gap-2">
                   <div
                     id="mp-card-expiry"
