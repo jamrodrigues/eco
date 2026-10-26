@@ -28,4 +28,18 @@ describe("payment-gateway settings", () => {
     expect(settings.active_gateway).toBe("pagarme")
     expect(svc.createPaymentGatewaySettings).toHaveBeenCalledTimes(1)
   })
+
+  it("never lets extra fields (id, deleted_at) reach the update call", async () => {
+    const svc = fakeService()
+    const { updatePaymentGatewaySettings } = require("../payment-gateway")
+    await updatePaymentGatewaySettings(svc, {
+      active_gateway: "pagarme",
+      id: "other_row",
+      deleted_at: new Date(),
+    } as any)
+    expect(svc.updatePaymentGatewaySettings).toHaveBeenCalledWith({
+      id: "default",
+      active_gateway: "pagarme",
+    })
+  })
 })

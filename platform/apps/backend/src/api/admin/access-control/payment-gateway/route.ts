@@ -18,6 +18,10 @@ export async function PUT(req: MedusaRequest<Body>, res: MedusaResponse) {
     return
   }
   const accessControlService: any = req.scope.resolve(ACCESS_CONTROL_MODULE)
-  const settings = await updatePaymentGatewaySettings(accessControlService, req.body)
+  // Whitelist: only `active_gateway` ever reaches the update — never `id`,
+  // `deleted_at` or any other admin-supplied field.
+  const settings = await updatePaymentGatewaySettings(accessControlService, {
+    active_gateway: req.body.active_gateway,
+  })
   res.status(200).json({ settings })
 }

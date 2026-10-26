@@ -55,6 +55,18 @@ describe("PUT /admin/access-control/payment-gateway", () => {
     expect(updatePaymentGatewaySettings).not.toHaveBeenCalled()
   })
 
+  it("only forwards active_gateway — never an admin-supplied id or deleted_at", async () => {
+    const res = mockRes()
+    await PUT(
+      mockReq({ active_gateway: "pagarme", id: "other_row", deleted_at: "2026-01-01" }),
+      res
+    )
+
+    expect(updatePaymentGatewaySettings).toHaveBeenCalledWith(expect.anything(), {
+      active_gateway: "pagarme",
+    })
+  })
+
   it("passes through when active_gateway is absent (no 400)", async () => {
     const res = mockRes()
     await PUT(mockReq({}), res)

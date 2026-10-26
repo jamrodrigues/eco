@@ -16,5 +16,12 @@ export async function updatePaymentGatewaySettings(
   data: { active_gateway?: "mercadopago" | "pagarme" }
 ): Promise<{ id: string; active_gateway: string }> {
   await getPaymentGatewaySettings(accessControlService) // garante que a linha existe
-  return accessControlService.updatePaymentGatewaySettings({ id: DEFAULT_ID, ...data })
+  // Só `active_gateway` é repassado (e o `id` é fixo): nenhum campo vindo do
+  // corpo da requisição (`id`, `deleted_at`, ...) pode redirecionar o update
+  // pra outra linha ou soft-deletar a linha singleton.
+  const update: { id: string; active_gateway?: "mercadopago" | "pagarme" } = { id: DEFAULT_ID }
+  if (data.active_gateway !== undefined) {
+    update.active_gateway = data.active_gateway
+  }
+  return accessControlService.updatePaymentGatewaySettings(update)
 }
