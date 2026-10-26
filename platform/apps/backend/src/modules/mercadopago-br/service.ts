@@ -142,6 +142,49 @@ class MercadoPagoBrService extends AbstractPaymentProvider<MercadoPagoBrOptions>
       }
     }
 
+    if (this.options_.method === "card") {
+      const token = (input.data as any)?.token
+      const installments = (input.data as any)?.installments
+
+      const response = await mpRequest<{
+        id: number
+        status: string
+        status_detail?: string
+      }>("/v1/payments", {
+        method: "POST",
+        accessToken: this.options_.accessToken || "",
+        body: JSON.stringify({
+          transaction_amount: Number(input.amount) / 100,
+          token,
+          installments,
+          payer: {
+            email: input.context?.customer?.email || "guest@checkout.local",
+          },
+          description: "Pedido loja",
+        }),
+      })
+
+      if (response.status === "rejected") {
+        throw new MedusaError(
+          MedusaError.Types.PAYMENT_AUTHORIZATION_ERROR,
+          response.status_detail || "Pagamento recusado"
+        )
+      }
+
+      return {
+        id: `mercadopago_card_${response.id}`,
+        data: {
+          id: `mercadopago_card_${response.id}`,
+          mp_payment_id: response.id,
+          cart_id: (input.data as any)?.cart_id,
+          provider_method: "card",
+          max_installments: 12,
+          status: this.mapMpStatus(response.status),
+          sandbox: this.isSandbox(),
+        },
+      }
+    }
+
     throw new Error(
       `MercadoPagoBrService: unsupported method "${this.options_.method}"`
     )
