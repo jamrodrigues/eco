@@ -21,7 +21,8 @@ import {
   createPaymentCollection,
   createPaymentSession,
   completeCart,
-  getPaymentProviderId,
+  fetchActivePaymentGateway,
+  getPaymentProviderIdForGateway,
   trueAvailableCoins,
   alreadyRedeemedCoins,
   clearStoredCartId,
@@ -401,10 +402,24 @@ export default function CheckoutPage() {
     setPlacing(true)
     setError(null)
     try {
+      // Resolve o gateway ativo ANTES de qualquer coisa específica da MP: se
+      // o admin trocou pro Pagar.me (ex.: MP fora do ar), o cartão não pode
+      // depender do SDK/public key da Mercado Pago.
+      const gateway = await fetchActivePaymentGateway()
+      const providerId = getPaymentProviderIdForGateway(
+        gateway,
+        method as "pix" | "card" | "boleto"
+      )
+
       // Tokeniza antes de tocar no carrinho: se a MP recusar os dados do
       // cartão (número/validade/CVV/CPF inválido), não queremos ter
       // atualizado endereço nem criado payment collection pra nada.
-      const cardSessionData = method === "card" ? await tokenizeCard() : undefined
+      const cardSessionData =
+        method === "card"
+          ? gateway === "mercadopago"
+            ? { ...(await tokenizeCard()), cart_id: cart.id }
+            : { cart_id: cart.id }
+          : undefined
 
       await updateCartDetails(cart.id, {
         email,
@@ -413,7 +428,6 @@ export default function CheckoutPage() {
       await recalc(cart, useCoins, useCoupon, useFreeShipping, method === "pix")
 
       const paymentCollection = await createPaymentCollection(cart.id)
-      const providerId = await getPaymentProviderId(method as "pix" | "card" | "boleto")
       const sessionData =
         method === "boleto"
           ? { payer_cpf: address.cpf.replace(/\D/g, ""), cart_id: cart.id }

@@ -232,9 +232,16 @@ export async function fetchActivePaymentGateway(): Promise<"mercadopago" | "paga
   return active_gateway
 }
 
+export function getPaymentProviderIdForGateway(
+  gateway: "mercadopago" | "pagarme",
+  method: "pix" | "card" | "boleto"
+): string {
+  return PAYMENT_PROVIDER_IDS_BY_GATEWAY[gateway][method]
+}
+
 export async function getPaymentProviderId(method: "pix" | "card" | "boleto"): Promise<string> {
   const gateway = await fetchActivePaymentGateway()
-  return PAYMENT_PROVIDER_IDS_BY_GATEWAY[gateway][method]
+  return getPaymentProviderIdForGateway(gateway, method)
 }
 
 /**
