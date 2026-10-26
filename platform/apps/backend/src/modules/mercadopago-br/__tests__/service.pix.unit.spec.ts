@@ -41,8 +41,41 @@ describe("MercadoPagoBrService — pix", () => {
   it("getWebhookActionAndData maps an approved payment to 'captured'", async () => {
     const svcAny = makeService() as any
     jest.spyOn(svcAny, "verifySignature" as any).mockReturnValue(true)
-    ;(client.mpRequest as jest.Mock).mockResolvedValue({ id: 555, status: "approved", transaction_amount: 10, metadata: { cart_id: "cart_1" } })
+    ;(client.mpRequest as jest.Mock).mockResolvedValue({
+      id: 555,
+      status: "approved",
+      payment_method_id: "pix",
+      transaction_amount: 10,
+      metadata: { cart_id: "cart_1" },
+    })
     const result = await svcAny.getWebhookActionAndData({ data: { id: "555" }, rawData: Buffer.from(""), headers: {} })
     expect(result.action).toBe("captured")
+    expect(result.data.session_id).toBe("mercadopago_pix_555")
+  })
+
+  it("getWebhookActionAndData derives 'boleto' from payment_method_id 'bolbradesco' even on a pix-registered instance", async () => {
+    const svcAny = makeService() as any
+    jest.spyOn(svcAny, "verifySignature" as any).mockReturnValue(true)
+    ;(client.mpRequest as jest.Mock).mockResolvedValue({
+      id: 777,
+      status: "approved",
+      payment_method_id: "bolbradesco",
+      transaction_amount: 10,
+    })
+    const result = await svcAny.getWebhookActionAndData({ data: { id: "777" }, rawData: Buffer.from(""), headers: {} })
+    expect(result.data.session_id).toBe("mercadopago_boleto_777")
+  })
+
+  it("getWebhookActionAndData derives 'card' for any non-pix/bolbradesco payment_method_id (e.g. 'master')", async () => {
+    const svcAny = makeService() as any
+    jest.spyOn(svcAny, "verifySignature" as any).mockReturnValue(true)
+    ;(client.mpRequest as jest.Mock).mockResolvedValue({
+      id: 888,
+      status: "approved",
+      payment_method_id: "master",
+      transaction_amount: 10,
+    })
+    const result = await svcAny.getWebhookActionAndData({ data: { id: "888" }, rawData: Buffer.from(""), headers: {} })
+    expect(result.data.session_id).toBe("mercadopago_card_888")
   })
 })
