@@ -21,14 +21,23 @@ export async function mpRequest<T>(
     },
   })
 
-  const body = await response.json()
-
   if (!response.ok) {
+    // Non-2xx error bodies aren't guaranteed to be valid JSON (empty bodies
+    // on some 401/500/502/504s are common) — never let a parse failure here
+    // crash the caller with a raw SyntaxError instead of a clean MedusaError.
+    let errorBody: any = {}
+    try {
+      errorBody = await response.json()
+    } catch {
+      errorBody = {}
+    }
+
     throw new MedusaError(
       MedusaError.Types.INVALID_DATA,
-      body?.message || "Mercado Pago request failed"
+      errorBody?.message || "Mercado Pago request failed"
     )
   }
 
+  const body = await response.json()
   return body as T
 }

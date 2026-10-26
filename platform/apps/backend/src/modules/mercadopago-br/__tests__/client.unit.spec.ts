@@ -15,4 +15,17 @@ describe("mpRequest", () => {
     global.fetch = jest.fn().mockResolvedValue({ ok: false, status: 400, json: async () => ({ message: "invalid card" }) }) as any
     await expect(mpRequest("/v1/payments", { method: "POST", accessToken: "TOKEN" })).rejects.toThrow("invalid card")
   })
+
+  it("throws a MedusaError (not a raw SyntaxError) on a non-2xx response with a non-JSON/empty body", async () => {
+    global.fetch = jest.fn().mockResolvedValue({
+      ok: false,
+      status: 502,
+      json: async () => {
+        throw new SyntaxError("Unexpected end of JSON input")
+      },
+    }) as any
+    await expect(mpRequest("/v1/payments", { method: "POST", accessToken: "TOKEN" })).rejects.toThrow(
+      "Mercado Pago request failed"
+    )
+  })
 })
