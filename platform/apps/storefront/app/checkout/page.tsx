@@ -434,7 +434,12 @@ export default function CheckoutPage() {
           : method === "pix"
             ? { cart_id: cart.id }
             : cardSessionData
-      const session = await createPaymentSession(paymentCollection.id, providerId, sessionData)
+      const session = await createPaymentSession(
+        paymentCollection.id,
+        providerId,
+        sessionData,
+        getSessionToken() || undefined
+      )
 
       if (method === "pix" && session) {
         try {

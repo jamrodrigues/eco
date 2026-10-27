@@ -196,7 +196,8 @@ export type PixSessionData = {
 export async function createPaymentSession(
   paymentCollectionId: string,
   providerId: string,
-  data?: Record<string, unknown>
+  data?: Record<string, unknown>,
+  token?: string
 ) {
   const { payment_collection } = await fetchJson<{
     payment_collection: {
@@ -204,6 +205,7 @@ export async function createPaymentSession(
     }
   }>(`/store/payment-collections/${paymentCollectionId}/payment-sessions`, {
     method: "POST",
+    headers: token ? { Authorization: `Bearer ${token}` } : undefined,
     body: JSON.stringify({ provider_id: providerId, data }),
   })
   const session = payment_collection.payment_sessions.find(
