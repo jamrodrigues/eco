@@ -16,6 +16,19 @@ describe("mpRequest", () => {
     await expect(mpRequest("/v1/payments", { method: "POST", accessToken: "TOKEN" })).rejects.toThrow("invalid card")
   })
 
+  it("throws a MedusaError with the Orders API's errors[0] message when there is no top-level message", async () => {
+    global.fetch = jest.fn().mockResolvedValue({
+      ok: false,
+      status: 400,
+      json: async () => ({
+        errors: [{ code: "required_properties", message: "Missing properties", details: ["'$.payer' - missing properties: 'address'"] }],
+      }),
+    }) as any
+    await expect(mpRequest("/v1/orders", { method: "POST", accessToken: "TOKEN" })).rejects.toThrow(
+      "Missing properties: '$.payer' - missing properties: 'address'"
+    )
+  })
+
   it("throws a MedusaError (not a raw SyntaxError) on a non-2xx response with a non-JSON/empty body", async () => {
     global.fetch = jest.fn().mockResolvedValue({
       ok: false,

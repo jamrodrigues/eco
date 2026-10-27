@@ -174,6 +174,7 @@ export default function CheckoutPage() {
     last_name: "Convidado",
     phone: "11999999999",
     address_1: "Av. Paulista, 1000",
+    neighborhood: "",
     city: "São Paulo",
     province: "SP",
     postal_code: "01310-100",
@@ -397,6 +398,27 @@ export default function CheckoutPage() {
     }
   }
 
+  /**
+   * O checkout só coleta "Endereço completo" como um campo livre (ex. "Av.
+   * Paulista, 1000"), mas a Orders API do Mercado Pago exige rua e número
+   * separados pro payer do boleto. Extrai o último grupo de dígitos como
+   * número; o resto (sem pontuação à direita) vira o nome da rua.
+   */
+  function buildPayerAddress() {
+    const raw = address.address_1.trim()
+    const match = raw.match(/^(.*?)[,\s]*([0-9]+)\s*$/)
+    const streetName = match ? match[1].trim() : raw
+    const streetNumber = match ? match[2] : "S/N"
+    return {
+      zip_code: address.postal_code.replace(/\D/g, ""),
+      street_name: streetName || raw,
+      street_number: streetNumber,
+      neighborhood: address.neighborhood.trim(),
+      state: address.province,
+      city: address.city,
+    }
+  }
+
   async function handlePlaceOrder() {
     if (!cart) return
     setPlacing(true)
@@ -410,6 +432,17 @@ export default function CheckoutPage() {
         gateway,
         method as "pix" | "card" | "boleto"
       )
+
+      // Mercado Pago exige CPF do titular pra pix e boleto (não só cartão),
+      // e nome + bairro completos pra boleto.
+      if (gateway === "mercadopago" && (method === "pix" || method === "boleto")) {
+        if (!address.cpf.replace(/\D/g, "")) {
+          throw new Error("Informe o CPF do titular (campo CPF acima).")
+        }
+        if (method === "boleto" && !address.neighborhood.trim()) {
+          throw new Error("Informe o bairro do endereço de entrega.")
+        }
+      }
 
       // Tokeniza antes de tocar no carrinho: se a MP recusar os dados do
       // cartão (número/validade/CVV/CPF inválido), não queremos ter
@@ -428,11 +461,18 @@ export default function CheckoutPage() {
       await recalc(cart, useCoins, useCoupon, useFreeShipping, method === "pix")
 
       const paymentCollection = await createPaymentCollection(cart.id)
+      const cpfDigitsForOrder = address.cpf.replace(/\D/g, "")
       const sessionData =
         method === "boleto"
-          ? { payer_cpf: address.cpf.replace(/\D/g, ""), cart_id: cart.id }
+          ? {
+              payer_cpf: cpfDigitsForOrder,
+              payer_first_name: address.first_name,
+              payer_last_name: address.last_name,
+              payer_address: buildPayerAddress(),
+              cart_id: cart.id,
+            }
           : method === "pix"
-            ? { cart_id: cart.id }
+            ? { payer_cpf: cpfDigitsForOrder, cart_id: cart.id }
             : cardSessionData
       const session = await createPaymentSession(
         paymentCollection.id,
@@ -541,6 +581,13 @@ export default function CheckoutPage() {
                   className="col-span-2 border border-black/[.09] rounded px-2 py-1.5"
                 />
                 <input
+                  value={address.neighborhood}
+                  onChange={(e) => setAddress({ ...address, neighborhood: e.target.value })}
+                  placeholder="Bairro (obrigatório para Boleto)"
+                  required={method === "boleto"}
+                  className="col-span-2 border border-black/[.09] rounded px-2 py-1.5"
+                />
+                <input
                   value={address.city}
                   onChange={(e) => setAddress({ ...address, city: e.target.value })}
                   placeholder="Cidade"
@@ -561,8 +608,8 @@ export default function CheckoutPage() {
                 <input
                   value={address.cpf}
                   onChange={(e) => setAddress({ ...address, cpf: e.target.value })}
-                  placeholder="CPF (obrigatório para Boleto/Cartão)"
-                  required={method === "boleto" || method === "card"}
+                  placeholder="CPF (obrigatório para Pix/Boleto/Cartão)"
+                  required={method === "pix" || method === "boleto" || method === "card"}
                   className="col-span-2 border border-black/[.09] rounded px-2 py-1.5"
                 />
               </div>

@@ -25,12 +25,44 @@ export type MercadoPagoBrOptions = {
 
 type MpPaymentStatus = "pending" | "captured" | "canceled"
 
-/** Raw Mercado Pago payment statuses we may act on when voiding a payment. */
-const MP_CANCELABLE_STATUSES = ["pending", "in_process", "authorized"]
-const MP_REFUNDABLE_STATUSES = ["approved"]
+type MpOrderPayment = {
+  id: string
+  amount: string
+  status: string
+  status_detail?: string
+  date_of_expiration?: string
+  payment_method?: {
+    id?: string
+    type?: string
+    qr_code?: string
+    qr_code_base64?: string
+    ticket_url?: string
+    digitable_line?: string
+  }
+}
+
+type MpOrderResponse = {
+  id: string
+  status: string
+  status_detail?: string
+  external_reference?: string
+  total_amount: string
+  transactions: { payments: MpOrderPayment[] }
+}
+
+/** Order statuses Mercado Pago lets us `POST /cancel` (vs. needing a refund). */
+const MP_CANCELABLE_ORDER_STATUSES = ["created", "action_required"]
+
+/** Joins session id + cart id inside `external_reference` — see buildExternalReference. */
+const EXTERNAL_REF_SEPARATOR = "__"
 
 /**
- * Mercado Pago payment provider for the Brasil region.
+ * Mercado Pago payment provider for the Brasil region, built on the
+ * **Orders API** (`/v1/orders`) — the legacy `/v1/payments` endpoint is
+ * rejected for this application with "Unauthorized use of live credentials"
+ * even for sandbox test cards (Mercado Pago now requires the Orders API for
+ * new applications; confirmed directly against the live API during manual
+ * testing).
  *
  * Three instances of this same class are registered in `medusa-config.ts`
  * (`pix_br` / `card_br` / `boleto_br`, one per `options.method`). `initiatePayment`
@@ -41,10 +73,10 @@ const MP_REFUNDABLE_STATUSES = ["approved"]
  * URL for the whole integration, and Medusa's `/hooks/payment/:provider` route
  * resolves that call to whichever ONE of the 3 registered instances happens to
  * match the route param — not necessarily the instance that actually created
- * the payment. So this method must NEVER branch on `this.options_.method`; it
- * resolves the Medusa payment session from the `metadata.medusa_session_id`
- * that `initiatePayment` attached to the Mercado Pago payment, so the webhook
- * behaves identically no matter which of the 3 instances received the HTTP call.
+ * the order. So this method must NEVER branch on `this.options_.method`; it
+ * resolves the Medusa payment session from `external_reference` (see
+ * `buildExternalReference`), so the webhook behaves identically no matter
+ * which of the 3 instances received the HTTP call.
  */
 class MercadoPagoBrService extends AbstractPaymentProvider<MercadoPagoBrOptions> {
   static identifier = "mercadopago-br"
@@ -74,31 +106,66 @@ class MercadoPagoBrService extends AbstractPaymentProvider<MercadoPagoBrOptions>
   }
 
   /**
-   * Common fields for every `POST /v1/payments` call: `metadata` lets the
-   * webhook map the Mercado Pago payment back to the real Medusa session and
-   * cart, and the `X-Idempotency-Key` (the Medusa session id) makes a retried
-   * request for the same session reuse the same Mercado Pago payment instead of
-   * creating (and, for card, charging) a second one.
+   * The Orders API has no `metadata` field (unlike the legacy Payments API
+   * this module used before), so the real Medusa session id travels in
+   * `external_reference` instead — the only free-form field Mercado Pago
+   * echoes back in both the create response and the webhook payload. The
+   * cart id (needed only for the pix success-page SSE) rides along in the
+   * same string, since there is nowhere else to put it.
+   *
+   * `external_reference` is capped at 64 characters by Mercado Pago; both
+   * Medusa ids together with their `payses_`/`cart_` prefixes exceed that,
+   * so the prefixes are stripped here and restored in `parseExternalReference`.
    */
-  private async createMpPayment<T>(
+  private buildExternalReference(
+    sessionId: string | undefined,
+    cartId: string | undefined
+  ): string {
+    const bareSessionId = (sessionId ?? crypto.randomUUID()).replace(/^payses_/, "")
+    const bareCartId = (cartId ?? "").replace(/^cart_/, "")
+    return `${bareSessionId}${EXTERNAL_REF_SEPARATOR}${bareCartId}`
+  }
+
+  private parseExternalReference(ref: string | undefined): {
+    sessionId?: string
+    cartId?: string
+  } {
+    if (!ref) return {}
+    const [bareSessionId, bareCartId] = ref.split(EXTERNAL_REF_SEPARATOR)
+    return {
+      sessionId: bareSessionId ? `payses_${bareSessionId}` : undefined,
+      cartId: bareCartId ? `cart_${bareCartId}` : undefined,
+    }
+  }
+
+  /**
+   * Common fields for every `POST /v1/orders` call. `X-Idempotency-Key` (the
+   * Medusa session id) makes a retried request for the same session reuse
+   * the same order instead of creating (and, for card, charging) a second
+   * one.
+   */
+  private async createMpOrder<T>(
     input: InitiatePaymentInput,
-    body: Record<string, unknown>
+    payment: Record<string, unknown>,
+    payer: Record<string, unknown>
   ): Promise<T> {
     const sessionId = this.medusaSessionId(input)
     const cartId = (input.data as any)?.cart_id as string | undefined
+    const totalAmount = (Number(input.amount) / 100).toFixed(2)
 
-    return mpRequest<T>("/v1/payments", {
+    return mpRequest<T>("/v1/orders", {
       method: "POST",
       accessToken: this.options_.accessToken || "",
       headers: {
         "X-Idempotency-Key": sessionId ?? crypto.randomUUID(),
       },
       body: JSON.stringify({
-        ...body,
-        metadata: {
-          medusa_session_id: sessionId,
-          cart_id: cartId,
-        },
+        type: "online",
+        external_reference: this.buildExternalReference(sessionId, cartId),
+        total_amount: totalAmount,
+        processing_mode: "automatic",
+        transactions: { payments: [{ amount: totalAmount, ...payment }] },
+        payer,
       }),
     })
   }
@@ -107,34 +174,36 @@ class MercadoPagoBrService extends AbstractPaymentProvider<MercadoPagoBrOptions>
     input: InitiatePaymentInput
   ): Promise<InitiatePaymentOutput> {
     if (this.options_.method === "pix") {
-      const response = await this.createMpPayment<{
-        id: number
-        status: string
-        date_of_expiration: string
-        point_of_interaction: {
-          transaction_data: { qr_code: string; qr_code_base64: string }
-        }
-      }>(input, {
-        transaction_amount: Number(input.amount) / 100,
-        payment_method_id: "pix",
-        payer: {
+      const payerCpf = (input.data as any)?.payer_cpf
+      if (!payerCpf) {
+        throw new MedusaError(
+          MedusaError.Types.INVALID_DATA,
+          "CPF obrigatório para pix"
+        )
+      }
+
+      const response = await this.createMpOrder<MpOrderResponse>(
+        input,
+        { payment_method: { id: "pix", type: "bank_transfer" } },
+        {
           email: input.context?.customer?.email || "guest@checkout.local",
-        },
-        description: "Pedido loja",
-      })
+          identification: { type: "CPF", number: payerCpf },
+        }
+      )
+      const payment = response.transactions.payments[0]
 
       return {
-        id: `mercadopago_pix_${response.id}`,
+        id: `mercadopago_pix_${payment.id}`,
         data: {
-          id: `mercadopago_pix_${response.id}`,
-          mp_payment_id: response.id,
+          id: `mercadopago_pix_${payment.id}`,
+          mp_payment_id: payment.id,
+          mp_order_id: response.id,
           cart_id: (input.data as any)?.cart_id,
           provider_method: "pix",
-          qr_code_emv: response.point_of_interaction.transaction_data.qr_code,
-          qr_code_base64:
-            response.point_of_interaction.transaction_data.qr_code_base64,
-          expires_at: response.date_of_expiration,
-          status: this.mapMpStatus(response.status),
+          qr_code_emv: payment.payment_method?.qr_code,
+          qr_code_base64: payment.payment_method?.qr_code_base64,
+          expires_at: payment.date_of_expiration,
+          status: this.mapMpStatus(payment.status),
           sandbox: this.isSandbox(),
         },
       }
@@ -142,42 +211,41 @@ class MercadoPagoBrService extends AbstractPaymentProvider<MercadoPagoBrOptions>
 
     if (this.options_.method === "boleto") {
       const payerCpf = (input.data as any)?.payer_cpf
+      const firstName = (input.data as any)?.payer_first_name
+      const lastName = (input.data as any)?.payer_last_name
+      const address = (input.data as any)?.payer_address
 
-      if (!payerCpf) {
+      if (!payerCpf || !firstName || !lastName || !address) {
         throw new MedusaError(
           MedusaError.Types.INVALID_DATA,
-          "CPF obrigatório para boleto"
+          "CPF, nome e endereço do titular são obrigatórios para boleto"
         )
       }
 
-      const response = await this.createMpPayment<{
-        id: number
-        status: string
-        date_of_expiration: string
-        transaction_details: {
-          external_resource_url: string
-          barcode: { content: string }
-        }
-      }>(input, {
-        transaction_amount: Number(input.amount) / 100,
-        payment_method_id: "bolbradesco",
-        payer: {
+      const response = await this.createMpOrder<MpOrderResponse>(
+        input,
+        { payment_method: { id: "boleto", type: "ticket" } },
+        {
           email: input.context?.customer?.email || "guest@checkout.local",
+          first_name: firstName,
+          last_name: lastName,
           identification: { type: "CPF", number: payerCpf },
-        },
-        description: "Pedido loja",
-      })
+          address,
+        }
+      )
+      const payment = response.transactions.payments[0]
 
       return {
-        id: `mercadopago_boleto_${response.id}`,
+        id: `mercadopago_boleto_${payment.id}`,
         data: {
-          id: `mercadopago_boleto_${response.id}`,
-          mp_payment_id: response.id,
+          id: `mercadopago_boleto_${payment.id}`,
+          mp_payment_id: payment.id,
+          mp_order_id: response.id,
           cart_id: (input.data as any)?.cart_id,
           provider_method: "boleto",
-          linha_digitavel: response.transaction_details.barcode.content,
-          due_date: response.date_of_expiration,
-          status: this.mapMpStatus(response.status),
+          linha_digitavel: payment.payment_method?.digitable_line,
+          due_date: payment.date_of_expiration,
+          status: this.mapMpStatus(payment.status),
           sandbox: this.isSandbox(),
         },
       }
@@ -195,37 +263,50 @@ class MercadoPagoBrService extends AbstractPaymentProvider<MercadoPagoBrOptions>
         )
       }
 
-      const response = await this.createMpPayment<{
-        id: number
-        status: string
-        status_detail?: string
-      }>(input, {
-        transaction_amount: Number(input.amount) / 100,
-        token,
-        installments,
-        payment_method_id: paymentMethodId,
-        payer: {
-          email: input.context?.customer?.email || "guest@checkout.local",
-        },
-        description: "Pedido loja",
-      })
-
-      if (response.status === "rejected") {
+      let response: MpOrderResponse
+      try {
+        response = await this.createMpOrder<MpOrderResponse>(
+          input,
+          {
+            payment_method: {
+              id: paymentMethodId,
+              type: "credit_card",
+              token,
+              installments,
+            },
+          },
+          { email: input.context?.customer?.email || "guest@checkout.local" }
+        )
+      } catch (err) {
+        // A declined card comes back from Mercado Pago as a non-2xx (HTTP
+        // 402, "Order was created but some transaction failed"), not a
+        // `status: "rejected"` field in a 200 response like the legacy
+        // Payments API. Any failure creating the card order is a decline:
+        // block the order instead of leaking a generic INVALID_DATA error.
         throw new MedusaError(
           MedusaError.Types.PAYMENT_AUTHORIZATION_ERROR,
-          response.status_detail || "Pagamento recusado"
+          err instanceof Error ? err.message : "Pagamento recusado"
+        )
+      }
+
+      const payment = response.transactions.payments[0]
+      if (payment.status !== "processed" || payment.status_detail !== "accredited") {
+        throw new MedusaError(
+          MedusaError.Types.PAYMENT_AUTHORIZATION_ERROR,
+          payment.status_detail || "Pagamento recusado"
         )
       }
 
       return {
-        id: `mercadopago_card_${response.id}`,
+        id: `mercadopago_card_${payment.id}`,
         data: {
-          id: `mercadopago_card_${response.id}`,
-          mp_payment_id: response.id,
+          id: `mercadopago_card_${payment.id}`,
+          mp_payment_id: payment.id,
+          mp_order_id: response.id,
           cart_id: (input.data as any)?.cart_id,
           provider_method: "card",
           max_installments: 12,
-          status: this.mapMpStatus(response.status),
+          status: this.mapMpStatus(payment.status),
           sandbox: this.isSandbox(),
         },
       }
@@ -254,14 +335,15 @@ class MercadoPagoBrService extends AbstractPaymentProvider<MercadoPagoBrOptions>
   }
 
   /**
-   * Voids the Mercado Pago payment behind this session for real. Mercado Pago
-   * only allows `canceled` on pending / in-process payments, so an already
-   * approved payment (e.g. a card charged synchronously in `initiatePayment`)
-   * is fully refunded instead. The live MP status is fetched first rather than
-   * trusting the possibly-stale status stored in the session data.
+   * Voids the Mercado Pago order behind this session for real. Mercado Pago
+   * only allows `/cancel` on `created`/`action_required` orders, so an
+   * already-processed order (e.g. a card charged synchronously in
+   * `initiatePayment`) is fully refunded instead. The live MP status is
+   * fetched first rather than trusting the possibly-stale status stored in
+   * the session data.
    */
   async cancelPayment(input: any) {
-    const data = await this.voidMpPayment(
+    const data = await this.voidMpOrder(
       input.data,
       input.context?.idempotency_key
     )
@@ -271,7 +353,7 @@ class MercadoPagoBrService extends AbstractPaymentProvider<MercadoPagoBrOptions>
   /**
    * Called when Medusa deletes a payment session (e.g. the storefront retries
    * checkout, which replaces the cart's session with a new one). A deleted
-   * session never becomes an order, so its Mercado Pago payment is voided —
+   * session never becomes an order, so its Mercado Pago order is voided —
    * otherwise a retried card checkout would leave the first charge in place.
    * Sessions that were already authorized into a Medusa Payment are never
    * voided here; those go through `cancelPayment`/`refundPayment` explicitly.
@@ -280,39 +362,46 @@ class MercadoPagoBrService extends AbstractPaymentProvider<MercadoPagoBrOptions>
     if (input.data?.medusa_authorized) {
       return { data: { ...input.data } }
     }
-    const data = await this.voidMpPayment(input.data, undefined)
+    const data = await this.voidMpOrder(input.data, undefined)
     return { data }
   }
 
   async refundPayment(input: any) {
-    const mpPaymentId = input.data?.mp_payment_id
+    const orderId = input.data?.mp_order_id
+    const paymentId = input.data?.mp_payment_id
 
-    if (!mpPaymentId) {
+    if (!orderId || !paymentId) {
       throw new MedusaError(
         MedusaError.Types.INVALID_DATA,
-        "Mercado Pago: pagamento sem mp_payment_id, não é possível estornar"
+        "Mercado Pago: pedido sem mp_order_id/mp_payment_id, não é possível estornar"
       )
     }
 
     // Medusa amounts in this store are in cents; Mercado Pago wants reais.
     const amountCents = new BigNumber(input.amount).numeric
-    const refund = await mpRequest<{ id: number; status?: string }>(
-      `/v1/payments/${mpPaymentId}/refunds`,
-      {
-        method: "POST",
-        accessToken: this.options_.accessToken || "",
-        headers: {
-          "X-Idempotency-Key":
-            input.context?.idempotency_key ?? crypto.randomUUID(),
-        },
-        body: JSON.stringify({ amount: Math.round(amountCents) / 100 }),
-      }
-    )
+    const refund = await mpRequest<{
+      id: string
+      transactions?: { refunds?: { id: string }[] }
+    }>(`/v1/orders/${orderId}/refund`, {
+      method: "POST",
+      accessToken: this.options_.accessToken || "",
+      headers: {
+        "X-Idempotency-Key":
+          input.context?.idempotency_key ?? crypto.randomUUID(),
+      },
+      body: JSON.stringify({
+        transactions: [
+          { id: paymentId, amount: (Math.round(amountCents) / 100).toFixed(2) },
+        ],
+      }),
+    })
+
+    const refundId = refund.transactions?.refunds?.[0]?.id ?? refund.id
 
     return {
       data: {
         ...input.data,
-        mp_refund_ids: [...(input.data?.mp_refund_ids ?? []), refund.id],
+        mp_refund_ids: [...(input.data?.mp_refund_ids ?? []), refundId],
       },
     }
   }
@@ -333,26 +422,25 @@ class MercadoPagoBrService extends AbstractPaymentProvider<MercadoPagoBrOptions>
     payload: ProviderWebhookPayload["payload"]
   ): Promise<WebhookActionResult> {
     // Medusa's `/hooks/payment/:provider` route passes `req.body` verbatim as
-    // `payload.data` (the query string is NOT forwarded). Mercado Pago's
-    // webhook body is `{ id: <notification id>, type: "payment",
-    // action: "payment.created", data: { id: <payment id> } }` — the top-level
-    // `id` is the NOTIFICATION id; the payment id is nested at `data.id`.
+    // `payload.data`. Mercado Pago's Orders API webhook body is
+    // `{ type: "order", action: "order.processed", data: { id: <ORDER id> } }`
+    // — the order id (prefixed `ORD`), not a payment id.
     const body = (payload.data || {}) as any
     const headers = (payload.headers || {}) as Record<string, string>
 
     const topic = body.type ?? body.topic
-    if (topic !== "payment") {
+    if (topic !== "order") {
       return { action: "not_supported" }
     }
 
-    const paymentId = body.data?.id
-    if (paymentId === undefined || paymentId === null || paymentId === "") {
+    const orderId = body.data?.id
+    if (orderId === undefined || orderId === null || orderId === "") {
       return { action: "not_supported" }
     }
 
     // Mercado Pago signs `id:<data.id>;...` and documents that alphanumeric
-    // ids must be lowercased in the manifest (payment ids are numeric).
-    const dataId = String(paymentId).toLowerCase()
+    // ids must be lowercased in the manifest.
+    const dataId = String(orderId).toLowerCase()
 
     const signatureOk = this.verifySignature({
       xSignature: headers["x-signature"],
@@ -364,28 +452,28 @@ class MercadoPagoBrService extends AbstractPaymentProvider<MercadoPagoBrOptions>
       return { action: "not_supported" }
     }
 
-    const response = await mpRequest<{
-      id: number
-      status: string
-      payment_method_id?: string
-      transaction_amount: number
-      metadata?: { medusa_session_id?: string; cart_id?: string }
-    }>(`/v1/payments/${encodeURIComponent(String(paymentId))}`, {
-      method: "GET",
-      accessToken: this.options_.accessToken || "",
-    })
+    const response = await mpRequest<MpOrderResponse>(
+      `/v1/orders/${encodeURIComponent(String(orderId))}`,
+      { method: "GET", accessToken: this.options_.accessToken || "" }
+    )
 
-    const sessionId = response.metadata?.medusa_session_id
+    const { sessionId, cartId } = this.parseExternalReference(
+      response.external_reference
+    )
     if (!sessionId) {
-      // Not a payment created by this integration (or created before the
-      // metadata was added) — there is no Medusa session to act on.
+      // Not an order created by this integration (or created before
+      // external_reference carried it) — there is no Medusa session to act on.
       return { action: "not_supported" }
     }
 
+    const payment = response.transactions?.payments?.[0]
     const mappedStatus = this.mapMpStatus(response.status)
-    const cartId = response.metadata?.cart_id
 
-    if (response.payment_method_id === "pix" && mappedStatus === "captured" && cartId) {
+    if (
+      payment?.payment_method?.id === "pix" &&
+      mappedStatus === "captured" &&
+      cartId
+    ) {
       // The storefront success page listens on `/pix-status/:cart_id`.
       pixStatusEmitter.emit(cartId, { status: "paid" })
     }
@@ -395,52 +483,54 @@ class MercadoPagoBrService extends AbstractPaymentProvider<MercadoPagoBrOptions>
       data: {
         session_id: sessionId,
         // Mercado Pago reports reais; Medusa amounts in this store are cents.
-        amount: Math.round(Number(response.transaction_amount) * 100),
+        amount: Math.round(Number(response.total_amount) * 100),
       },
     }
   }
 
   /**
-   * Cancels (pending) or fully refunds (approved) the Mercado Pago payment
-   * referenced by `data.mp_payment_id`. No-op when there is no MP payment yet
-   * or it is already in a terminal non-paid state.
+   * Cancels (pending) or fully refunds (already processed) the Mercado Pago
+   * order referenced by `data.mp_order_id`. No-op when there is no MP order
+   * yet or it is already in a terminal non-paid state.
    */
-  private async voidMpPayment(
+  private async voidMpOrder(
     data: Record<string, any> | undefined,
     idempotencyKey: string | undefined
   ): Promise<Record<string, any>> {
-    const mpPaymentId = data?.mp_payment_id
-    if (!mpPaymentId) {
+    const orderId = data?.mp_order_id
+    if (!orderId) {
       return { ...(data ?? {}) }
     }
 
     const accessToken = this.options_.accessToken || ""
-    const current = await mpRequest<{ id: number; status: string }>(
-      `/v1/payments/${mpPaymentId}`,
+    const current = await mpRequest<{ id: string; status: string }>(
+      `/v1/orders/${orderId}`,
       { method: "GET", accessToken }
     )
 
-    if (MP_CANCELABLE_STATUSES.includes(current.status)) {
-      await mpRequest(`/v1/payments/${mpPaymentId}`, {
-        method: "PUT",
+    if (MP_CANCELABLE_ORDER_STATUSES.includes(current.status)) {
+      await mpRequest(`/v1/orders/${orderId}/cancel`, {
+        method: "POST",
         accessToken,
         headers: {
-          "X-Idempotency-Key": idempotencyKey ?? `cancel_${mpPaymentId}`,
+          "X-Idempotency-Key": idempotencyKey ?? `cancel_${orderId}`,
         },
-        body: JSON.stringify({ status: "cancelled" }),
       })
       return { ...data, status: "canceled" }
     }
 
-    if (MP_REFUNDABLE_STATUSES.includes(current.status)) {
-      // Empty body = full refund.
-      await mpRequest(`/v1/payments/${mpPaymentId}/refunds`, {
+    if (current.status === "processed") {
+      await mpRequest(`/v1/orders/${orderId}/refund`, {
         method: "POST",
         accessToken,
         headers: {
-          "X-Idempotency-Key": idempotencyKey ?? `void_refund_${mpPaymentId}`,
+          "X-Idempotency-Key": idempotencyKey ?? `void_refund_${orderId}`,
         },
-        body: JSON.stringify({}),
+        body: JSON.stringify({
+          transactions: data?.mp_payment_id
+            ? [{ id: data.mp_payment_id }]
+            : [],
+        }),
       })
       return { ...data, status: "canceled", mp_voided_by_refund: true }
     }
@@ -462,10 +552,14 @@ class MercadoPagoBrService extends AbstractPaymentProvider<MercadoPagoBrOptions>
   }
 
   private mapMpStatus(mpStatus: string): MpPaymentStatus {
-    if (mpStatus === "approved") {
+    if (mpStatus === "processed") {
       return "captured"
     }
-    if (mpStatus === "pending" || mpStatus === "in_process") {
+    if (
+      mpStatus === "action_required" ||
+      mpStatus === "processing" ||
+      mpStatus === "created"
+    ) {
       return "pending"
     }
     return "canceled"

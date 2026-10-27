@@ -32,10 +32,16 @@ export async function mpRequest<T>(
       errorBody = {}
     }
 
-    throw new MedusaError(
-      MedusaError.Types.INVALID_DATA,
-      errorBody?.message || "Mercado Pago request failed"
-    )
+    // The legacy Payments API puts the message at `message`; the Orders API
+    // puts it inside `errors[0]` instead (with extra detail in `details`).
+    const ordersError = errorBody?.errors?.[0]
+    const message =
+      errorBody?.message ||
+      (ordersError &&
+        [ordersError.message, ...(ordersError.details || [])].filter(Boolean).join(": ")) ||
+      "Mercado Pago request failed"
+
+    throw new MedusaError(MedusaError.Types.INVALID_DATA, message)
   }
 
   const body = await response.json()

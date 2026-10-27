@@ -12,6 +12,28 @@ function calls() {
   return (client.mpRequest as jest.Mock).mock.calls
 }
 
+function approvedOrderResponse(overrides: Partial<Record<string, any>> = {}) {
+  return {
+    id: "ORD999",
+    status: "processed",
+    status_detail: "accredited",
+    external_reference: "x__y",
+    total_amount: "10.00",
+    transactions: {
+      payments: [
+        {
+          id: "PAY999",
+          amount: "10.00",
+          status: "processed",
+          status_detail: "accredited",
+          payment_method: { id: "master", type: "credit_card" },
+        },
+      ],
+    },
+    ...overrides,
+  }
+}
+
 describe("MercadoPagoBrService — card", () => {
   beforeEach(() => jest.clearAllMocks())
   afterEach(() => jest.restoreAllMocks())
@@ -28,8 +50,38 @@ describe("MercadoPagoBrService — card", () => {
     expect(client.mpRequest).not.toHaveBeenCalled()
   })
 
-  it("throws PAYMENT_AUTHORIZATION_ERROR when MP rejects the card", async () => {
-    ;(client.mpRequest as jest.Mock).mockResolvedValue({ id: 999, status: "rejected", status_detail: "cc_rejected_insufficient_amount" })
+  it("throws PAYMENT_AUTHORIZATION_ERROR when the order comes back with a non-accredited payment", async () => {
+    ;(client.mpRequest as jest.Mock).mockResolvedValue(
+      approvedOrderResponse({
+        status: "action_required",
+        status_detail: "pending_challenge",
+        transactions: {
+          payments: [
+            {
+              id: "PAY999",
+              amount: "10.00",
+              status: "action_required",
+              status_detail: "cc_rejected_insufficient_amount",
+              payment_method: { id: "master", type: "credit_card" },
+            },
+          ],
+        },
+      })
+    )
+    const svc = makeService()
+    await expect(
+      svc.initiatePayment({
+        amount: 1000,
+        currency_code: "brl",
+        data: { token: "tok_abc", installments: 1, payment_method_id: "master" },
+      } as any)
+    ).rejects.toMatchObject({ type: MedusaError.Types.PAYMENT_AUTHORIZATION_ERROR })
+  })
+
+  it("throws PAYMENT_AUTHORIZATION_ERROR when Mercado Pago rejects the order outright (non-2xx, declined test card)", async () => {
+    ;(client.mpRequest as jest.Mock).mockRejectedValue(
+      new MedusaError(MedusaError.Types.INVALID_DATA, "Unauthorized use of live credentials")
+    )
     const svc = makeService()
     await expect(
       svc.initiatePayment({
@@ -41,7 +93,7 @@ describe("MercadoPagoBrService — card", () => {
   })
 
   it("returns status 'captured' when MP approves the card charge, sending payment_method_id to MP", async () => {
-    ;(client.mpRequest as jest.Mock).mockResolvedValue({ id: 999, status: "approved" })
+    ;(client.mpRequest as jest.Mock).mockResolvedValue(approvedOrderResponse())
     const svc = makeService()
     const result = await svc.initiatePayment({
       amount: 1000,
@@ -49,16 +101,19 @@ describe("MercadoPagoBrService — card", () => {
       data: { token: "tok_abc", installments: 3, payment_method_id: "master" },
     } as any)
     expect(result.data!.status).toBe("captured")
+    expect(result.data!.mp_payment_id).toBe("PAY999")
+    expect(result.data!.mp_order_id).toBe("ORD999")
 
     const [, options] = calls()[calls().length - 1]
     const body = JSON.parse(options.body)
-    expect(body.payment_method_id).toBe("master")
-    expect(body.token).toBe("tok_abc")
-    expect(body.installments).toBe(3)
+    const paymentMethod = body.transactions.payments[0].payment_method
+    expect(paymentMethod.id).toBe("master")
+    expect(paymentMethod.token).toBe("tok_abc")
+    expect(paymentMethod.installments).toBe(3)
   })
 
-  it("charges with the real Medusa session id as X-Idempotency-Key and metadata", async () => {
-    ;(client.mpRequest as jest.Mock).mockResolvedValue({ id: 999, status: "approved" })
+  it("posts to /v1/orders with the real Medusa session id as X-Idempotency-Key and external_reference", async () => {
+    ;(client.mpRequest as jest.Mock).mockResolvedValue(approvedOrderResponse())
     const svc = makeService()
     await svc.initiatePayment({
       amount: 1000,
@@ -66,30 +121,37 @@ describe("MercadoPagoBrService — card", () => {
       data: { token: "tok_abc", installments: 1, payment_method_id: "visa", session_id: "payses_CARD", cart_id: "cart_9" },
       context: { idempotency_key: "payses_CARD" },
     } as any)
-    const [, options] = calls()[0]
+    const [path, options] = calls()[0]
+    expect(path).toBe("/v1/orders")
     expect(options.headers["X-Idempotency-Key"]).toBe("payses_CARD")
-    expect(JSON.parse(options.body).metadata).toEqual({ medusa_session_id: "payses_CARD", cart_id: "cart_9" })
+    expect(JSON.parse(options.body).external_reference).toBe("CARD__9")
   })
 
   describe("refundPayment", () => {
-    it("POSTs a refund to MP in reais with Medusa's idempotency key", async () => {
-      ;(client.mpRequest as jest.Mock).mockResolvedValue({ id: 4242, status: "approved" })
+    it("POSTs a refund to MP's order endpoint in reais with Medusa's idempotency key", async () => {
+      ;(client.mpRequest as jest.Mock).mockResolvedValue({
+        id: "ORD999",
+        status: "processed",
+        transactions: { refunds: [{ id: "REF1" }] },
+      })
       const svc = makeService()
       const result = await svc.refundPayment({
         amount: { value: "2550", precision: 20 },
-        data: { mp_payment_id: 999 },
+        data: { mp_order_id: "ORD999", mp_payment_id: "PAY999" },
         context: { idempotency_key: "ref_01" },
       } as any)
 
       const [path, options] = calls()[0]
-      expect(path).toBe("/v1/payments/999/refunds")
+      expect(path).toBe("/v1/orders/ORD999/refund")
       expect(options.method).toBe("POST")
       expect(options.headers["X-Idempotency-Key"]).toBe("ref_01")
-      expect(JSON.parse(options.body)).toEqual({ amount: 25.5 })
-      expect(result.data!.mp_refund_ids).toEqual([4242])
+      expect(JSON.parse(options.body)).toEqual({
+        transactions: [{ id: "PAY999", amount: "25.50" }],
+      })
+      expect(result.data!.mp_refund_ids).toEqual(["REF1"])
     })
 
-    it("throws instead of faking success when there is no MP payment id", async () => {
+    it("throws instead of faking success when there is no MP order id", async () => {
       const svc = makeService()
       await expect(svc.refundPayment({ amount: 100, data: {} } as any)).rejects.toThrow()
       expect(client.mpRequest).not.toHaveBeenCalled()
@@ -99,78 +161,77 @@ describe("MercadoPagoBrService — card", () => {
       ;(client.mpRequest as jest.Mock).mockRejectedValue(new Error("Mercado Pago request failed"))
       const svc = makeService()
       await expect(
-        svc.refundPayment({ amount: 100, data: { mp_payment_id: 999 } } as any)
+        svc.refundPayment({ amount: 100, data: { mp_order_id: "ORD999", mp_payment_id: "PAY999" } } as any)
       ).rejects.toThrow("Mercado Pago request failed")
     })
   })
 
   describe("cancelPayment", () => {
-    it("PUTs status 'canceled' to MP for a pending payment", async () => {
+    it("POSTs /cancel to MP for an action_required order", async () => {
       ;(client.mpRequest as jest.Mock)
-        .mockResolvedValueOnce({ id: 999, status: "pending" })
-        .mockResolvedValueOnce({ id: 999, status: "canceled" })
+        .mockResolvedValueOnce({ id: "ORD999", status: "action_required" })
+        .mockResolvedValueOnce({ id: "ORD999", status: "canceled" })
       const svc = makeService()
       const result = await svc.cancelPayment({
-        data: { mp_payment_id: 999 },
+        data: { mp_order_id: "ORD999" },
         context: { idempotency_key: "pay_01" },
       } as any)
 
-      expect(calls()[0][0]).toBe("/v1/payments/999")
+      expect(calls()[0][0]).toBe("/v1/orders/ORD999")
       expect(calls()[0][1].method).toBe("GET")
       const [path, options] = calls()[1]
-      expect(path).toBe("/v1/payments/999")
-      expect(options.method).toBe("PUT")
-      expect(JSON.parse(options.body)).toEqual({ status: "cancelled" })
+      expect(path).toBe("/v1/orders/ORD999/cancel")
+      expect(options.method).toBe("POST")
       expect(options.headers["X-Idempotency-Key"]).toBe("pay_01")
       expect(result.data!.status).toBe("canceled")
     })
 
-    it("fully refunds an already-approved payment (MP cannot cancel approved payments)", async () => {
+    it("fully refunds an already-processed order (MP cannot cancel processed orders)", async () => {
       ;(client.mpRequest as jest.Mock)
-        .mockResolvedValueOnce({ id: 999, status: "approved" })
-        .mockResolvedValueOnce({ id: 1, status: "approved" })
+        .mockResolvedValueOnce({ id: "ORD999", status: "processed" })
+        .mockResolvedValueOnce({ id: "ORD999", status: "processed" })
       const svc = makeService()
-      await svc.cancelPayment({ data: { mp_payment_id: 999 } } as any)
+      await svc.cancelPayment({ data: { mp_order_id: "ORD999", mp_payment_id: "PAY999" } } as any)
       const [path, options] = calls()[1]
-      expect(path).toBe("/v1/payments/999/refunds")
+      expect(path).toBe("/v1/orders/ORD999/refund")
       expect(options.method).toBe("POST")
-      expect(JSON.parse(options.body)).toEqual({})
+      expect(JSON.parse(options.body)).toEqual({ transactions: [{ id: "PAY999" }] })
     })
 
-    it("does not call MP mutations for an already-cancelled payment", async () => {
-      ;(client.mpRequest as jest.Mock).mockResolvedValueOnce({ id: 999, status: "cancelled" })
+    it("does not call MP mutations for an already-canceled order", async () => {
+      ;(client.mpRequest as jest.Mock).mockResolvedValueOnce({ id: "ORD999", status: "canceled" })
       const svc = makeService()
-      await svc.cancelPayment({ data: { mp_payment_id: 999 } } as any)
+      await svc.cancelPayment({ data: { mp_order_id: "ORD999" } } as any)
       expect(calls()).toHaveLength(1)
     })
 
     it("propagates an MP failure instead of reporting a cancellation", async () => {
       ;(client.mpRequest as jest.Mock)
-        .mockResolvedValueOnce({ id: 999, status: "pending" })
+        .mockResolvedValueOnce({ id: "ORD999", status: "action_required" })
         .mockRejectedValueOnce(new Error("Mercado Pago request failed"))
       const svc = makeService()
-      await expect(svc.cancelPayment({ data: { mp_payment_id: 999 } } as any)).rejects.toThrow()
+      await expect(svc.cancelPayment({ data: { mp_order_id: "ORD999" } } as any)).rejects.toThrow()
     })
   })
 
   describe("deletePayment", () => {
-    it("voids the MP charge of an abandoned (never authorized) session", async () => {
+    it("voids the MP order of an abandoned (never authorized) session", async () => {
       ;(client.mpRequest as jest.Mock)
-        .mockResolvedValueOnce({ id: 999, status: "approved" })
-        .mockResolvedValueOnce({ id: 1, status: "approved" })
+        .mockResolvedValueOnce({ id: "ORD999", status: "processed" })
+        .mockResolvedValueOnce({ id: "ORD999", status: "processed" })
       const svc = makeService()
-      await svc.deletePayment({ data: { mp_payment_id: 999 } } as any)
-      expect(calls()[1][0]).toBe("/v1/payments/999/refunds")
+      await svc.deletePayment({ data: { mp_order_id: "ORD999", mp_payment_id: "PAY999" } } as any)
+      expect(calls()[1][0]).toBe("/v1/orders/ORD999/refund")
     })
 
     it("never voids a session that was already authorized into a Medusa payment", async () => {
       const svc = makeService()
-      const authorized = await svc.authorizePayment({ data: { mp_payment_id: 999 } })
+      const authorized = await svc.authorizePayment({ data: { mp_order_id: "ORD999" } })
       await svc.deletePayment({ data: authorized.data } as any)
       expect(client.mpRequest).not.toHaveBeenCalled()
     })
 
-    it("is a no-op when MP never created a payment for the session", async () => {
+    it("is a no-op when MP never created an order for the session", async () => {
       const svc = makeService()
       await svc.deletePayment({ data: { cart_id: "c" } } as any)
       expect(client.mpRequest).not.toHaveBeenCalled()
