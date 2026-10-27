@@ -427,7 +427,7 @@ class MercadoPagoBrService extends AbstractPaymentProvider<MercadoPagoBrOptions>
         headers: {
           "X-Idempotency-Key": idempotencyKey ?? `cancel_${mpPaymentId}`,
         },
-        body: JSON.stringify({ status: "canceled" }),
+        body: JSON.stringify({ status: "cancelled" }),
       })
       return { ...data, status: "canceled" }
     }

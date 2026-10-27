@@ -120,7 +120,7 @@ describe("MercadoPagoBrService — card", () => {
       const [path, options] = calls()[1]
       expect(path).toBe("/v1/payments/999")
       expect(options.method).toBe("PUT")
-      expect(JSON.parse(options.body)).toEqual({ status: "canceled" })
+      expect(JSON.parse(options.body)).toEqual({ status: "cancelled" })
       expect(options.headers["X-Idempotency-Key"]).toBe("pay_01")
       expect(result.data!.status).toBe("canceled")
     })
