@@ -38,7 +38,10 @@ export default function OrderSuccessPage() {
   const method = searchParams.get("method")
 
   const [pixSession, setPixSession] = useState<PixSessionData | null>(null)
-  const [status, setStatus] = useState<"pending" | "paid">("pending")
+  // Pix confirma de forma assíncrona (SSE abaixo). Cartão e boleto só chegam
+  // nesta página depois que o pedido já foi criado com sucesso no backend,
+  // então não há "aguardando liquidação" real pra mostrar pra eles.
+  const [status, setStatus] = useState<"pending" | "paid">(method === "pix" ? "pending" : "paid")
   const [toastMsg, setToastMsg] = useState<string | null>(null)
   const eventSourceRef = useRef<EventSource | null>(null)
   const countdown = useCountdown(pixSession?.expires_at ?? null)
@@ -59,7 +62,7 @@ export default function OrderSuccessPage() {
   }, [cartId, method])
 
   useEffect(() => {
-    if (!cartId) return
+    if (!cartId || method !== "pix") return
     const es = new EventSource(`${BACKEND_URL}/pix-status/${cartId}`)
     eventSourceRef.current = es
     es.onmessage = (event) => {
@@ -70,7 +73,7 @@ export default function OrderSuccessPage() {
       }
     }
     return () => es.close()
-  }, [cartId])
+  }, [cartId, method])
 
   async function handleSimulate() {
     if (!cartId) return

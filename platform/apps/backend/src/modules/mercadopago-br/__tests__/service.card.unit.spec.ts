@@ -214,6 +214,25 @@ describe("MercadoPagoBrService — card", () => {
     })
   })
 
+  describe("authorizePayment", () => {
+    it("reports captured when the card was already charged synchronously", async () => {
+      const svc = makeService()
+      const result = await svc.authorizePayment({
+        data: { mp_order_id: "ORD999", status: "captured" },
+      } as any)
+      expect(result.status).toBe("captured")
+      expect(result.data.medusa_authorized).toBe(true)
+    })
+
+    it("falls back to authorized when the session has no captured status", async () => {
+      const svc = makeService()
+      const result = await svc.authorizePayment({
+        data: { mp_order_id: "ORD999", status: "pending" },
+      } as any)
+      expect(result.status).toBe("authorized")
+    })
+  })
+
   describe("deletePayment", () => {
     it("voids the MP order of an abandoned (never authorized) session", async () => {
       ;(client.mpRequest as jest.Mock)

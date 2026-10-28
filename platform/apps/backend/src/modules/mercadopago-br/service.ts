@@ -320,13 +320,21 @@ class MercadoPagoBrService extends AbstractPaymentProvider<MercadoPagoBrOptions>
   /**
    * Marks the session data as authorized so `deletePayment` can tell a session
    * that became a real Medusa Payment (never auto-void it) from an abandoned one.
+   *
+   * Card orders are charged synchronously in `initiatePayment` (it throws
+   * unless Mercado Pago already reports `status: "processed"`), so
+   * `input.data.status` is already `"captured"` by the time we get here —
+   * returning a hardcoded `"authorized"` regardless left every card order
+   * stuck one step short of "Pago" (only a manual admin capture would move
+   * it). Pix/boleto stay `"authorized"` until their webhook/capture flow
+   * confirms payment.
    */
   async authorizePayment(
     input: any
-  ): Promise<{ data: any; status: "authorized" }> {
+  ): Promise<{ data: any; status: "authorized" | "captured" }> {
     return {
       data: { ...input.data, medusa_authorized: true },
-      status: "authorized",
+      status: input.data?.status === "captured" ? "captured" : "authorized",
     }
   }
 
