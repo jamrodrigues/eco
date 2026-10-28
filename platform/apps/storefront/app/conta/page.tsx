@@ -133,10 +133,10 @@ export default function ContaPage() {
   useEffect(() => {
     const t = getSessionToken()
     if (!t) {
-      setLoading(false)
+      queueMicrotask(() => setLoading(false))
       return
     }
-    setToken(t)
+    queueMicrotask(() => setToken(t))
     ;(async () => {
       try {
         const [me, myOrders, myAddresses, myCoins] = await Promise.all([
