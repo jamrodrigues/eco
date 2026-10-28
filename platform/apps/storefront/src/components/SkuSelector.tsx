@@ -2,6 +2,7 @@
 
 import type { ProductDetail } from "@/lib/medusa"
 import { isOptionValueAvailable } from "@/lib/medusa"
+import MaterialIcon from "./MaterialIcon"
 
 export default function SkuSelector({
   product,
@@ -63,8 +64,8 @@ export default function SkuSelector({
                         borderColor: "transparent transparent #EE4D2D transparent",
                       }}
                     >
-                      <span className="absolute -bottom-[13px] -right-0 text-white text-[8px]">
-                        ✓
+                      <span className="absolute -bottom-[13px] -right-0 text-white">
+                        <MaterialIcon name="check" className="text-[9px]" />
                       </span>
                     </span>
                   )}

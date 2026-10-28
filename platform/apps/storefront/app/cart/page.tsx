@@ -245,7 +245,11 @@ export default function CartPage() {
           <label className="flex items-center justify-between text-sm cursor-pointer">
             <span>
               Cupom de Frete Grátis{" "}
-              {useFreeShipping && <span className="text-freeShipping">Ativo ✓</span>}
+              {useFreeShipping && (
+                <span className="text-freeShipping inline-flex items-center gap-1">
+                  Ativo <MaterialIcon name="check" className="text-[14px]" />
+                </span>
+              )}
             </span>
             <input
               type="checkbox"

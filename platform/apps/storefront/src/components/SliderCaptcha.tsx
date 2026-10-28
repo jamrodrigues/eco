@@ -1,6 +1,7 @@
 "use client"
 
 import { useRef, useState } from "react"
+import MaterialIcon from "./MaterialIcon"
 
 /**
  * Captcha de quebra-cabeca deslizante (secao 4 do doc da Fase 2): o
@@ -35,7 +36,13 @@ export default function SliderCaptcha({ onVerified }: { onVerified: (ok: boolean
       onTouchMove={(e) => handleMove(e.touches[0].clientX)}
     >
       <span className="absolute inset-0 flex items-center justify-center text-xs text-textSecondary">
-        {verified ? "Verificado ✓" : "Arraste para verificar →"}
+        {verified ? (
+          <span className="inline-flex items-center gap-1">
+            Verificado <MaterialIcon name="check" className="text-[14px]" />
+          </span>
+        ) : (
+          "Arraste para verificar →"
+        )}
       </span>
       <div
         className={`absolute top-0 left-0 h-9 w-9 flex items-center justify-center rounded cursor-grab active:cursor-grabbing text-white ${
@@ -45,7 +52,11 @@ export default function SliderCaptcha({ onVerified }: { onVerified: (ok: boolean
         onMouseDown={() => (dragging.current = true)}
         onTouchStart={() => (dragging.current = true)}
       >
-        {verified ? "✓" : "➡"}
+        {verified ? (
+          <MaterialIcon name="check" className="text-[16px]" />
+        ) : (
+          "➡"
+        )}
       </div>
     </div>
   )

@@ -73,7 +73,7 @@ export default function Footer() {
           <ul className="space-y-2 text-textSecondary">
             {SELOS.map((item) => (
               <li key={item} className="flex items-center gap-1.5">
-                <span className="text-freeShipping">✓</span> {item}
+                <MaterialIcon name="check" className="text-freeShipping text-[14px]" /> {item}
               </li>
             ))}
           </ul>
