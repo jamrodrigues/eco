@@ -84,7 +84,7 @@ export default function PdpClient({ product }: { product: ProductDetail }) {
         : []
 
   return (
-    <div className="max-w-container mx-auto px-4 py-6 pb-24 md:pb-10">
+    <div className="w-full max-w-container mx-auto px-4 py-6 pb-24 md:pb-10">
       <div className="flex flex-col md:flex-row gap-6">
         <ProductGallery images={images} title={product.title} />
 

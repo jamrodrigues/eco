@@ -513,7 +513,7 @@ export default function CheckoutPage() {
     return (
       <>
         <Header />
-        <div className="max-w-container mx-auto px-4 py-10 text-textSecondary">Carregando...</div>
+        <div className="w-full max-w-container mx-auto px-4 py-10 text-textSecondary">Carregando...</div>
       </>
     )
   }
@@ -533,7 +533,7 @@ export default function CheckoutPage() {
           setMpReady(true)
         }}
       />
-      <div className="max-w-container mx-auto px-4 py-6 pb-10 grid md:grid-cols-[1fr_380px] gap-6">
+      <div className="w-full max-w-container mx-auto px-4 py-6 pb-10 grid md:grid-cols-[1fr_380px] gap-6">
         <div className="space-y-4">
           <div className="bg-surface border border-black/[.09] rounded overflow-hidden">
             <div

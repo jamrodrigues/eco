@@ -89,7 +89,7 @@ export default function OrderSuccessPage() {
   return (
     <>
       <Header />
-      <div className="max-w-container mx-auto px-4 py-10 flex flex-col items-center text-center">
+      <div className="w-full max-w-container mx-auto px-4 py-10 flex flex-col items-center text-center">
         {status === "paid" ? (
           <div className="bg-freeShipping/10 text-freeShipping font-bold text-lg rounded-full px-6 py-3">
             ✅ Pagamento Pix Compensado!

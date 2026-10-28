@@ -22,7 +22,7 @@ export default async function InstitutionalPage({
   return (
     <>
       <Header />
-      <section className="max-w-container mx-auto px-4 py-10 mb-20 md:mb-10 min-h-[50vh]">
+      <section className="w-full max-w-container mx-auto px-4 py-10 mb-20 md:mb-10 min-h-[50vh]">
         <Link href="/" className="text-sm text-brand hover:underline">
           ← Voltar para a Home
         </Link>

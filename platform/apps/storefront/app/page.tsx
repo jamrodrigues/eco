@@ -17,7 +17,7 @@ export default async function HomePage() {
       <ServiceShortcuts />
       <FlashSaleSection products={products} />
 
-      <section className="max-w-container mx-auto px-4 mt-5 mb-20 md:mb-10">
+      <section className="w-full max-w-container mx-auto px-4 mt-5 mb-20 md:mb-10">
         <h2 className="sticky top-0 md:top-header bg-canvas py-2 font-bold text-lg text-textPrimary z-10">
           Descobertas do Dia
         </h2>

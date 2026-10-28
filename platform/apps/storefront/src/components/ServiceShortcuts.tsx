@@ -10,7 +10,7 @@ const items = [
 
 export default function ServiceShortcuts() {
   return (
-    <section className="max-w-container mx-auto px-4 mt-3">
+    <section className="w-full max-w-container mx-auto px-4 mt-3">
       <div className="flex md:justify-between gap-4 md:gap-0 overflow-x-auto md:overflow-visible pb-1">
         {items.map((item) => (
           <div
