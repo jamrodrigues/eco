@@ -508,20 +508,47 @@ export default function ContaPage() {
 
                 <div className="space-y-2">
                   {filteredOrders.map((order) => (
-                    <div
-                      key={order.id}
-                      className="border border-black/[.09] rounded p-3 flex items-center justify-between text-sm"
-                    >
-                      <div>
-                        <p className="font-semibold">Pedido #{order.display_id}</p>
-                        <p className="text-textSecondary text-xs">{formatDate(order.created_at)}</p>
+                    <div key={order.id} className="border border-black/[.09] rounded p-3 text-sm">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="font-semibold">Pedido #{order.display_id}</p>
+                          <p className="text-textSecondary text-xs">{formatDate(order.created_at)}</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-semibold">{formatBRL(order.total)}</p>
+                          <p className="text-textSecondary text-xs">
+                            {PAYMENT_STATUS_LABEL[order.payment_status] || order.payment_status}
+                          </p>
+                        </div>
                       </div>
-                      <div className="text-right">
-                        <p className="font-semibold">{formatBRL(order.total)}</p>
-                        <p className="text-textSecondary text-xs">
-                          {PAYMENT_STATUS_LABEL[order.payment_status] || order.payment_status}
-                        </p>
-                      </div>
+                      {order.items?.length > 0 && (
+                        <div className="flex items-center gap-2 mt-2 pt-2 border-t border-black/[.06]">
+                          <div className="flex -space-x-2 shrink-0">
+                            {order.items.slice(0, 3).map((item) => (
+                              <div
+                                key={item.id}
+                                className="w-10 h-10 rounded border border-white bg-canvas overflow-hidden shrink-0"
+                              >
+                                {item.thumbnail ? (
+                                  // eslint-disable-next-line @next/next/no-img-element
+                                  <img
+                                    src={item.thumbnail}
+                                    alt={item.title}
+                                    className="w-full h-full object-cover"
+                                  />
+                                ) : (
+                                  <div className="w-full h-full flex items-center justify-center text-textSecondary">
+                                    <MaterialIcon name="hide_image" className="text-sm" />
+                                  </div>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                          <p className="text-textSecondary text-xs line-clamp-1 min-w-0">
+                            {order.items.map((i) => i.title).join(", ")}
+                          </p>
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>

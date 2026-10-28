@@ -2,6 +2,13 @@
 
 import { BACKEND_URL, PUBLISHABLE_KEY } from "./medusa"
 
+export type MyOrderItem = {
+  id: string
+  title: string
+  thumbnail: string | null
+  quantity: number
+}
+
 export type MyOrder = {
   id: string
   display_id: number
@@ -10,6 +17,7 @@ export type MyOrder = {
   total: number
   currency_code: string
   created_at: string
+  items: MyOrderItem[]
 }
 
 /**
@@ -19,7 +27,7 @@ export type MyOrder = {
  */
 export async function listMyOrders(token: string): Promise<MyOrder[]> {
   const res = await fetch(
-    `${BACKEND_URL}/store/orders?fields=id,display_id,status,+payment_status,total,currency_code,created_at&order=-created_at`,
+    `${BACKEND_URL}/store/orders?fields=id,display_id,status,+payment_status,total,currency_code,created_at,items.id,items.title,items.thumbnail,items.quantity&order=-created_at`,
     {
       headers: {
         "Content-Type": "application/json",
