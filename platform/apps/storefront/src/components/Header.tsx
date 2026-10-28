@@ -4,11 +4,13 @@ import { useEffect, useState } from "react"
 import Link from "next/link"
 import { brandConfig } from "@/config/brand.config"
 import { getCurrentCustomer, getSessionToken, logoutCustomer } from "@/lib/auth"
+import { getCartIfExists, onCartUpdated } from "@/lib/cart"
 
 export default function Header() {
   const [scrolled, setScrolled] = useState(false)
   const [customerName, setCustomerName] = useState<string | null>(null)
   const [accountMenuOpen, setAccountMenuOpen] = useState(false)
+  const [cartCount, setCartCount] = useState(0)
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 40)
@@ -21,6 +23,16 @@ export default function Header() {
     getCurrentCustomer().then((customer) => {
       if (customer) setCustomerName(customer.first_name || customer.email)
     })
+  }, [])
+
+  useEffect(() => {
+    const refreshCartCount = () => {
+      getCartIfExists().then((cart) => {
+        setCartCount(cart ? cart.items.reduce((sum, item) => sum + item.quantity, 0) : 0)
+      })
+    }
+    refreshCartCount()
+    return onCartUpdated(refreshCartCount)
   }, [])
 
   return (
@@ -87,6 +99,11 @@ export default function Header() {
           </div>
           <Link href="/cart" className="relative shrink-0">
             <span className="material-symbols-outlined text-[26px] leading-none">shopping_cart</span>
+            {cartCount > 0 && (
+              <span className="absolute -top-1.5 -right-2 min-w-[16px] h-[16px] px-1 flex items-center justify-center rounded-full bg-badgeOfficial text-white text-[10px] font-bold leading-none">
+                {cartCount > 99 ? "99+" : cartCount}
+              </span>
+            )}
           </Link>
         </div>
       </div>
@@ -109,8 +126,13 @@ export default function Header() {
             className="flex-1 bg-transparent text-sm outline-none text-textPrimary"
           />
         </div>
-        <Link href="/cart">
+        <Link href="/cart" className="relative">
           <span className="material-symbols-outlined text-[22px] leading-none">shopping_cart</span>
+          {cartCount > 0 && (
+            <span className="absolute -top-1.5 -right-2 min-w-[16px] h-[16px] px-1 flex items-center justify-center rounded-full bg-badgeOfficial text-white text-[10px] font-bold leading-none">
+              {cartCount > 99 ? "99+" : cartCount}
+            </span>
+          )}
         </Link>
         <Link href="/chat">
           <span className="material-symbols-outlined text-[22px] leading-none">chat</span>

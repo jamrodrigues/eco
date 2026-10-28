@@ -4,6 +4,26 @@ import { BACKEND_URL, PUBLISHABLE_KEY, REGION_ID, SALES_CHANNEL_ID } from "./med
 
 const CART_ID_KEY = "ecommerce_cart_id"
 
+/**
+ * Evento disparado sempre que o carrinho muda (item adicionado/removido/
+ * quantidade alterada), pra qualquer componente montado em outra parte da
+ * árvore (ex: o badge de contagem no ícone do carrinho do Header) se
+ * atualizar sem precisar de um estado global/contexto compartilhado.
+ */
+const CART_UPDATED_EVENT = "cart:updated"
+
+function notifyCartUpdated() {
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new Event(CART_UPDATED_EVENT))
+  }
+}
+
+export function onCartUpdated(handler: () => void): () => void {
+  if (typeof window === "undefined") return () => {}
+  window.addEventListener(CART_UPDATED_EVENT, handler)
+  return () => window.removeEventListener(CART_UPDATED_EVENT, handler)
+}
+
 export type CartItem = {
   id: string
   title: string
@@ -136,6 +156,7 @@ export async function addLineItem(cartId: string, variantId: string, quantity: n
     method: "POST",
     body: JSON.stringify({ variant_id: variantId, quantity }),
   })
+  notifyCartUpdated()
   return cart
 }
 
@@ -144,6 +165,7 @@ export async function updateLineItemQuantity(cartId: string, lineItemId: string,
     `/store/carts/${cartId}/line-items/${lineItemId}`,
     { method: "POST", body: JSON.stringify({ quantity }) }
   )
+  notifyCartUpdated()
   return cart
 }
 
@@ -152,6 +174,7 @@ export async function removeLineItem(cartId: string, lineItemId: string) {
     `/store/carts/${cartId}/line-items/${lineItemId}`,
     { method: "DELETE" }
   )
+  notifyCartUpdated()
   return cart
 }
 
