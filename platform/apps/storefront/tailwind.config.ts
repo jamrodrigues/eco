@@ -1,10 +1,12 @@
 import type { Config } from "tailwindcss"
+import { brandConfig } from "./src/config/brand.config"
 
 /**
- * Design tokens do funil (Fase 2 / @FrontendShopee). Os valores de cor e
- * densidade replicam exatamente o benchmark de UX inspecionado no
- * relatorio tecnico; os NOMES dos tokens sao neutros de marca (o nome da
- * loja, cores de tema e textos reais vêm de src/config/brand.config.ts).
+ * Design tokens do funil (Fase 2 / @FrontendShopee). Densidade/tipografia
+ * replicam exatamente o benchmark de UX inspecionado no relatorio tecnico;
+ * a PALETA le de verdade src/config/brand.config.ts (antes desse fix, os
+ * hex ficavam hardcoded aqui e brand.config.ts era so decorativo — bug
+ * achado na Fase 5 ao trocar a cor da Vruumoto e nada mudar na tela).
  */
 const config: Config = {
   content: [
@@ -16,8 +18,8 @@ const config: Config = {
     extend: {
       colors: {
         brand: {
-          DEFAULT: "#EE4D2D",
-          light: "#FFF5F1",
+          DEFAULT: brandConfig.theme.primaryHex,
+          light: brandConfig.theme.secondaryLightBg,
         },
         badgeOfficial: "#D0011B",
         badgeDiscount: "#FFD424",
@@ -48,7 +50,7 @@ const config: Config = {
         headerMainBar: "85px",
       },
       backgroundImage: {
-        "header-gradient": "linear-gradient(-180deg, #F53D2D, #FF6633)",
+        "header-gradient": `linear-gradient(-180deg, ${brandConfig.theme.headerGradientStart}, ${brandConfig.theme.headerGradientEnd})`,
       },
     },
   },

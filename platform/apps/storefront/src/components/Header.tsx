@@ -5,6 +5,7 @@ import Link from "next/link"
 import { brandConfig } from "@/config/brand.config"
 import { getCurrentCustomer, getSessionToken, logoutCustomer } from "@/lib/auth"
 import { getCartIfExists, onCartUpdated } from "@/lib/cart"
+import MaterialIcon from "./MaterialIcon"
 
 export default function Header() {
   const [scrolled, setScrolled] = useState(false)
@@ -50,7 +51,7 @@ export default function Header() {
                 onClick={() => setAccountMenuOpen((v) => !v)}
                 className="flex items-center gap-1.5 opacity-90 hover:opacity-100 font-semibold"
               >
-                <span className="material-symbols-outlined text-[18px] leading-none">account_circle</span>
+                <MaterialIcon name="account_circle" className="text-[18px] leading-none" />
                 {customerName}
               </button>
               {accountMenuOpen && (
@@ -82,25 +83,36 @@ export default function Header() {
           )}
         </div>
         <div className="h-headerMainBar max-w-container mx-auto flex items-center gap-6 px-4">
-          <Link href="/" className="text-2xl font-extrabold tracking-tight shrink-0">
-            {brandConfig.storeName}
+          <Link href="/" className="flex items-center shrink-0">
+            {brandConfig.logoImagePath ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={brandConfig.logoImagePath}
+                alt={brandConfig.storeName}
+                className="h-16 w-auto object-contain"
+              />
+            ) : (
+              <span className="text-2xl font-extrabold tracking-tight">
+                {brandConfig.storeName}
+              </span>
+            )}
           </Link>
           <div className="flex-1 max-w-[840px]">
-            <div className="flex items-center bg-white rounded-sm overflow-hidden">
+            <div className="flex bg-white rounded-sm overflow-hidden">
               <input
                 type="text"
                 placeholder="Buscar produtos, marcas e muito mais"
                 className="flex-1 px-4 py-2 text-textPrimary text-sm outline-none"
               />
-              <button className="bg-brand px-5 py-2 text-white text-sm font-medium">
-                Buscar
+              <button className="bg-brand px-5 text-white flex items-center justify-center shrink-0" aria-label="Buscar">
+                <MaterialIcon name="search" className="text-xl" />
               </button>
             </div>
           </div>
           <Link href="/cart" className="relative shrink-0">
-            <span className="material-symbols-outlined text-[26px] leading-none">shopping_cart</span>
+            <MaterialIcon name="shopping_cart" className="text-2xl" />
             {cartCount > 0 && (
-              <span className="absolute -top-1.5 -right-2 min-w-[16px] h-[16px] px-1 flex items-center justify-center rounded-full bg-badgeOfficial text-white text-[10px] font-bold leading-none">
+              <span className="absolute -top-1.5 -right-1.5 bg-badgeOfficial text-white text-[10px] font-bold leading-none rounded-full min-w-[16px] h-4 px-1 flex items-center justify-center">
                 {cartCount > 99 ? "99+" : cartCount}
               </span>
             )}
@@ -108,34 +120,33 @@ export default function Header() {
         </div>
       </div>
 
-      {/* Mobile: compact bar, transparent -> solid on scroll */}
+      {/* Mobile: compact bar, sempre no gradiente da marca (nao fica branco no scroll) */}
       <div
-        className={`md:hidden flex items-center gap-2 px-3 py-2 transition-colors ${
-          scrolled ? "bg-white shadow-sm" : "bg-transparent"
+        className={`md:hidden flex items-center gap-2 px-3 py-2 bg-header-gradient text-white transition-shadow ${
+          scrolled ? "shadow-sm" : ""
         }`}
       >
-        <div
-          className={`flex-1 flex items-center rounded-full px-3 py-1.5 ${
-            scrolled ? "bg-canvas" : "bg-white/90"
-          }`}
-        >
-          <span className="material-symbols-outlined text-[16px] leading-none mr-2">photo_camera</span>
+        <Link href="/" className="shrink-0" aria-label={`Ir para a página inicial da ${brandConfig.storeName}`}>
+          <MaterialIcon name="home" className="text-xl" />
+        </Link>
+        <div className="flex-1 flex items-center rounded-full px-3 py-1.5 bg-white/95">
+          <MaterialIcon name="search" className="text-base mr-2 text-textSecondary" />
           <input
             type="text"
-            placeholder="Buscar"
+            placeholder={`Buscar na ${brandConfig.storeName}`}
             className="flex-1 bg-transparent text-sm outline-none text-textPrimary"
           />
         </div>
         <Link href="/cart" className="relative">
-          <span className="material-symbols-outlined text-[22px] leading-none">shopping_cart</span>
+          <MaterialIcon name="shopping_cart" className="text-xl" />
           {cartCount > 0 && (
-            <span className="absolute -top-1.5 -right-2 min-w-[16px] h-[16px] px-1 flex items-center justify-center rounded-full bg-badgeOfficial text-white text-[10px] font-bold leading-none">
+            <span className="absolute -top-1.5 -right-1.5 bg-badgeOfficial text-white text-[9px] font-bold leading-none rounded-full min-w-[15px] h-[15px] px-1 flex items-center justify-center">
               {cartCount > 99 ? "99+" : cartCount}
             </span>
           )}
         </Link>
         <Link href="/chat">
-          <span className="material-symbols-outlined text-[22px] leading-none">chat</span>
+          <MaterialIcon name="chat_bubble" className="text-xl" />
         </Link>
       </div>
     </header>

@@ -1,10 +1,16 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
 import type { ProductDetail } from "@/lib/medusa"
 import { findVariantBySelection, formatBRL, variantOptionMap } from "@/lib/medusa"
 import { getOrCreateCart, addLineItem } from "@/lib/cart"
+import { brandConfig } from "@/config/brand.config"
+import {
+  isMotorcycleCompatible,
+  loadSelectedMotorcycle,
+  type SelectedMotorcycle,
+} from "@/data/motorcycle-fitment"
 import ProductGallery from "./ProductGallery"
 import SkuSelector from "./SkuSelector"
 import CepCalculator from "./CepCalculator"
@@ -13,13 +19,15 @@ import BottomSheetDrawer from "./BottomSheetDrawer"
 import SellerCard from "./SellerCard"
 import SpecsTable from "./SpecsTable"
 import ReviewsBlock from "./ReviewsBlock"
+import MotorcycleFitmentBar from "./MotorcycleFitmentBar"
+import MaterialIcon from "./MaterialIcon"
 import manifest from "../../public/assets/manifest.json"
 
 const manifestImageByHandle: Record<string, { src: string; alt: string }> = {
-  "vestido-midi-canelado-lovito-gola-alta": manifest.products.vestido_lovito_preto,
+  "kit-relacao-transmissao-aco-1045-vruumoto-original": manifest.products.kit_relacao_freio,
 }
 
-const SELLER_NAME = "Lovito Brasil Oficial"
+const SELLER_NAME = "Vruumoto Oficial"
 
 export default function PdpClient({ product }: { product: ProductDetail }) {
   const router = useRouter()
@@ -31,11 +39,23 @@ export default function PdpClient({ product }: { product: ProductDetail }) {
   const [toastMsg, setToastMsg] = useState<string | null>(null)
   const [sheetOpen, setSheetOpen] = useState<"add" | "buy" | null>(null)
   const [busy, setBusy] = useState(false)
+  const [myBike, setMyBike] = useState<SelectedMotorcycle | null>(null)
+
+  useEffect(() => {
+    // Hidrata do localStorage so no mount (so existe no client).
+    if (brandConfig.features.enableVehicleFitmentFilter) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setMyBike(loadSelectedMotorcycle())
+    }
+  }, [])
 
   const selectedVariant = useMemo(
     () => findVariantBySelection(product, selection),
     [product, selection]
   )
+
+  const fitmentList = selectedVariant?.metadata?.compatible_motorcycles
+  const isCompatible = myBike ? isMotorcycleCompatible(myBike, fitmentList) : null
 
   const price = selectedVariant?.calculated_price?.calculated_amount ?? 0
   const originalPrice = product.variants[0]?.calculated_price?.original_amount ?? price
@@ -85,6 +105,12 @@ export default function PdpClient({ product }: { product: ProductDetail }) {
 
   return (
     <div className="w-full max-w-container mx-auto px-4 py-6 pb-24 md:pb-10">
+      {brandConfig.features.enableVehicleFitmentFilter && (
+        <div className="mb-4">
+          <MotorcycleFitmentBar onChange={setMyBike} />
+        </div>
+      )}
+
       <div className="flex flex-col md:flex-row gap-6">
         <ProductGallery images={images} title={product.title} />
 
@@ -124,6 +150,34 @@ export default function PdpClient({ product }: { product: ProductDetail }) {
           <div className="mt-4">
             <SkuSelector product={product} selection={selection} onSelect={handleSelect} />
           </div>
+
+          {brandConfig.features.enableVehicleFitmentFilter && isCompatible !== null && (
+            <div
+              className={`mt-3 px-3 py-2 rounded text-sm font-semibold flex items-center gap-1.5 ${
+                isCompatible
+                  ? "bg-freeShipping/10 text-freeShipping"
+                  : "bg-badgeOfficial/10 text-badgeOfficial"
+              }`}
+            >
+              <MaterialIcon name={isCompatible ? "check_circle" : "warning"} />
+              {isCompatible
+                ? `SERVE NA SUA MOTO: Compatível com ${myBike?.make} ${myBike?.model}`
+                : `ATENÇÃO: Esta peça NÃO é compatível com ${myBike?.make} ${myBike?.model} ${myBike?.year}.`}
+            </div>
+          )}
+
+          {brandConfig.features.enableOemPartNumberSearch &&
+            (selectedVariant?.metadata?.oem_part_number ||
+              selectedVariant?.metadata?.ean_barcode) && (
+              <div className="mt-2 flex flex-wrap gap-3 text-xs text-textSecondary">
+                {selectedVariant?.metadata?.oem_part_number && (
+                  <span>Cód. OEM: {selectedVariant.metadata.oem_part_number}</span>
+                )}
+                {selectedVariant?.metadata?.ean_barcode && (
+                  <span>EAN: {selectedVariant.metadata.ean_barcode}</span>
+                )}
+              </div>
+            )}
 
           <CepCalculator />
 
@@ -184,13 +238,13 @@ export default function PdpClient({ product }: { product: ProductDetail }) {
           href="/chat"
           className="w-11 h-11 flex items-center justify-center rounded-full bg-freeShipping/10 text-freeShipping"
         >
-          <span className="material-symbols-outlined text-[22px] leading-none">chat</span>
+          <MaterialIcon name="chat_bubble" className="text-xl" />
         </a>
         <a
           href="/cart"
           className="w-11 h-11 flex items-center justify-center rounded-full bg-canvas"
         >
-          <span className="material-symbols-outlined text-[22px] leading-none">shopping_cart</span>
+          <MaterialIcon name="shopping_cart" className="text-xl" />
         </a>
         <button
           type="button"

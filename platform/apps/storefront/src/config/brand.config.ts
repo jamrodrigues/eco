@@ -17,25 +17,59 @@ export interface BrandConfig {
     enableHyperlocalCityBadge: boolean
     enablePwaInstallPrompt: boolean
   }
+  /** Opcional — quando ausente, o Header mostra o storeName em texto. */
+  logoImagePath?: string
+  /**
+   * Opcional — quando ausente, ServiceShortcuts usa a lista genérica.
+   * `icon` e o nome do icone no catalogo Material Symbols
+   * (fonts.google.com/icons), renderizado via <MaterialIcon>.
+   */
+  serviceShortcuts?: { icon: string; label: string }[]
+  /**
+   * Dados legais/institucionais — opcionais. Quando ausentes (ex: branch
+   * `main`, white-label genérico) o Footer não renderiza o bloco legal.
+   */
+  legalName?: string
+  cnpj?: string
+  address?: string
+  supportEmail?: string
+  developedByLabel?: string
+  developedByUrl?: string
 }
 
 export const brandConfig: BrandConfig = {
-  storeName: process.env.NEXT_PUBLIC_STORE_NAME || "EcoShop Brasil",
-  storeTagline: "Frete Grátis, Ofertas Relâmpago e Entrega Rápida na Sua Cidade",
-  officialBadgeLabel: "OFICIAL",
-  coinsLabel: "Moedas",
-  guaranteeTitle: "Garantia Total",
-  guaranteeDescription: "Receba seu pedido ou seu dinheiro de volta com segurança.",
+  storeName: process.env.NEXT_PUBLIC_STORE_NAME || "Vruumoto",
+  storeTagline: "Peça certa. Rápido. Entrega expressa pro motoboy e pro moto cliente.",
+  officialBadgeLabel: "ORIGINAL",
+  coinsLabel: "Moedas Vruum",
+  guaranteeTitle: "Garantia Vruumoto",
+  guaranteeDescription:
+    "Peça 100% compatível com a sua moto ou devolução gratuita em até 7 dias.",
   theme: {
-    primaryHex: "#EE4D2D",
-    headerGradientStart: "#F53D2D",
-    headerGradientEnd: "#FF6633",
-    secondaryLightBg: "rgba(255, 87, 34, 0.08)",
+    primaryHex: "#FF5A1F",
+    headerGradientStart: "#E8440A",
+    headerGradientEnd: "#FF7A33",
+    secondaryLightBg: "rgba(255, 90, 31, 0.08)",
   },
   features: {
-    enableVehicleFitmentFilter: false,
-    enableOemPartNumberSearch: false,
+    enableVehicleFitmentFilter: true,
+    enableOemPartNumberSearch: true,
     enableHyperlocalCityBadge: true,
     enablePwaInstallPrompt: true,
   },
+  logoImagePath: "/icons/vruumoto-wordmark-white.png",
+  serviceShortcuts: [
+    { icon: "link", label: "Kit Relação" },
+    { icon: "tire_repair", label: "Pneus & Câmaras" },
+    { icon: "sports_motorsports", label: "Capacetes & Jaquetas" },
+    { icon: "oil_barrel", label: "Óleos & Filtros" },
+    { icon: "album", label: "Freios" },
+    { icon: "two_wheeler", label: "Entrega Expressa Motoboy" },
+  ],
+  legalName: "Vrumm Motos",
+  cnpj: "69.233.612/0001-20",
+  address: "Avenida em Projeto, 08, Recanto da Poesia, Satuba - AL, CEP 57120-000",
+  supportEmail: "contato@vruumoto.com.br",
+  developedByLabel: "Desenvolvido por astrealabs.com.br",
+  developedByUrl: "https://astrealabs.com.br",
 }

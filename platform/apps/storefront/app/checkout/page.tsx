@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
 import Script from "next/script"
 import Header from "@/components/Header"
+import MaterialIcon from "@/components/MaterialIcon"
 import { formatBRL, getShippingByCep } from "@/lib/medusa"
 import {
   type Cart,
@@ -135,10 +136,15 @@ const shippingMethodOptions: {
 
 type PaymentMethod = "pix" | "card" | "boleto" | "wallet"
 
-const paymentOptions: { id: PaymentMethod; icon: string; label: string; enabled: boolean }[] = [
+const paymentOptions: {
+  id: PaymentMethod
+  icon: string
+  label: string
+  enabled: boolean
+}[] = [
   { id: "pix", icon: "bolt", label: "PIX (10% OFF EXTRA)", enabled: true },
   { id: "card", icon: "credit_card", label: "Cartão de Crédito (Até 3x sem juros)", enabled: true },
-  { id: "boleto", icon: "description", label: "Boleto Bancário", enabled: true },
+  { id: "boleto", icon: "receipt_long", label: "Boleto Bancário", enabled: true },
   { id: "wallet", icon: "account_balance_wallet", label: "Carteira Digital", enabled: false },
 ]
 
@@ -692,16 +698,14 @@ export default function CheckoutPage() {
                   type="button"
                   disabled={!opt.enabled || toggling}
                   onClick={() => handleToggle({ method: opt.id })}
-                  className={`w-full text-left px-3 py-2.5 rounded border text-sm ${
+                  className={`w-full text-left px-3 py-2.5 rounded border text-sm flex items-center gap-2 ${
                     method === opt.id
                       ? "border-brand text-brand font-semibold bg-brand-light"
                       : "border-black/[.09]"
                   } ${!opt.enabled ? "opacity-40 cursor-not-allowed" : ""}`}
                 >
-                  <span className="inline-flex items-center gap-1.5">
-                    <span className="material-symbols-outlined text-[16px] leading-none">{opt.icon}</span>
-                    {opt.label}
-                  </span>
+                  <MaterialIcon name={opt.icon} className="text-base shrink-0" />
+                  {opt.label}
                   {!opt.enabled && " — indisponível nesta fase"}
                 </button>
               ))}
@@ -729,12 +733,7 @@ export default function CheckoutPage() {
                 <p className="text-[11px] text-textSecondary h-[14px] flex items-center gap-1">
                   {paymentMethodId && (
                     <>
-                      <span
-                        className="material-symbols-outlined text-[13px] leading-none"
-                        style={{ fontVariationSettings: "'opsz' 20, 'wght' 400, 'FILL' 0, 'GRAD' 0" }}
-                      >
-                        credit_card
-                      </span>
+                      <MaterialIcon name="credit_card" className="text-[13px] leading-none" />
                       {`Bandeira detectada: ${paymentMethodId}`}
                     </>
                   )}

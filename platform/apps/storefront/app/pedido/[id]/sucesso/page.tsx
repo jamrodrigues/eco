@@ -8,6 +8,7 @@ import PixQrCanvas from "@/components/PixQrCanvas"
 import Toast from "@/components/Toast"
 import { formatBRL, BACKEND_URL } from "@/lib/medusa"
 import { simulatePixPayment, type PixSessionData } from "@/lib/cart"
+import MaterialIcon from "@/components/MaterialIcon"
 
 function useCountdown(expiresAt: string | null) {
   const [remaining, setRemaining] = useState("")
@@ -91,8 +92,8 @@ export default function OrderSuccessPage() {
       <Header />
       <div className="w-full max-w-container mx-auto px-4 py-10 flex flex-col items-center text-center">
         {status === "paid" ? (
-          <div className="bg-freeShipping/10 text-freeShipping font-bold text-lg rounded-full px-6 py-3 inline-flex items-center gap-2">
-            <span className="material-symbols-outlined text-xl leading-none">check_circle</span> Pagamento Pix Compensado!
+          <div className="bg-freeShipping/10 text-freeShipping font-bold text-lg rounded-full px-6 py-3 flex items-center gap-2">
+            <MaterialIcon name="check_circle" className="text-xl leading-none" /> Pagamento Pix Compensado!
           </div>
         ) : (
           <div className="flex items-center gap-2 text-textSecondary text-sm">

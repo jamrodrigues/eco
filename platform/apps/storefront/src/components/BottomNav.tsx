@@ -1,9 +1,10 @@
 import Link from "next/link"
+import MaterialIcon from "./MaterialIcon"
 
 const tabs = [
   { icon: "home", label: "Início", href: "/" },
-  { icon: "smart_display", label: "Vídeo", href: "/video" },
-  { icon: "sensors", label: "Live", href: "/live" },
+  { icon: "movie", label: "Vídeo", href: "/video" },
+  { icon: "live_tv", label: "Live", href: "/live" },
   { icon: "account_circle", label: "Eu", href: "/conta" },
 ]
 
@@ -16,7 +17,7 @@ export default function BottomNav() {
           href={tab.href}
           className="flex-1 flex flex-col items-center justify-center py-1.5 text-[11px] text-textSecondary"
         >
-          <span className="material-symbols-outlined text-[22px] leading-none">{tab.icon}</span>
+          <MaterialIcon name={tab.icon} className="text-lg leading-none" />
           <span>{tab.label}</span>
         </Link>
       ))}

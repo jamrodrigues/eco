@@ -1,6 +1,7 @@
 import Link from "next/link"
 import type { MedusaProduct } from "@/lib/medusa"
 import { deterministicInRange, formatBRL } from "@/lib/medusa"
+import MaterialIcon from "./MaterialIcon"
 
 export default function ProductCard({ product }: { product: MedusaProduct }) {
   const variant = product.variants?.[0]
@@ -23,7 +24,7 @@ export default function ProductCard({ product }: { product: MedusaProduct }) {
           />
         ) : (
           <div className="w-full h-full flex flex-col items-center justify-center gap-1 text-textSecondary">
-            <span className="material-symbols-outlined text-2xl leading-none">inventory_2</span>
+            <MaterialIcon name="hide_image" className="text-2xl" />
             <span className="text-[10px]">Sem foto</span>
           </div>
         )}

@@ -1,6 +1,7 @@
 "use client"
 
 import { useRef, useState } from "react"
+import MaterialIcon from "./MaterialIcon"
 
 export default function ProductGallery({
   images,
@@ -73,12 +74,13 @@ export default function ProductGallery({
           href={`https://wa.me/?text=${encodeURIComponent(title)}`}
           target="_blank"
           rel="noreferrer"
-          className="hover:text-brand inline-flex items-center gap-1"
+          className="hover:text-brand flex items-center gap-1"
         >
-          <span className="material-symbols-outlined text-[16px] leading-none">share</span> Compartilhar
+          <MaterialIcon name="share" className="text-base" /> Compartilhar
         </a>
-        <button type="button" className="hover:text-brand inline-flex items-center gap-1">
-          <span className="material-symbols-outlined text-[16px] leading-none">favorite</span> Favoritar
+        <button type="button" className="hover:text-brand flex items-center gap-1">
+          <MaterialIcon name="favorite" className="text-base" /> Favoritar
+
         </button>
       </div>
     </div>

@@ -105,6 +105,7 @@ export function clearStoredCartId() {
   } catch {
     // ver storeCartId
   }
+  notifyCartUpdated()
 }
 
 export async function getCartIfExists(): Promise<Cart | null> {

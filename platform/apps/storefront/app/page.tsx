@@ -5,6 +5,8 @@ import FlashSaleSection from "@/components/FlashSaleSection"
 import ProductGrid from "@/components/ProductGrid"
 import BottomNav from "@/components/BottomNav"
 import Footer from "@/components/Footer"
+import MotorcycleFitmentBar from "@/components/MotorcycleFitmentBar"
+import { brandConfig } from "@/config/brand.config"
 import { listProducts } from "@/lib/medusa"
 
 export default async function HomePage() {
@@ -14,6 +16,11 @@ export default async function HomePage() {
     <>
       <Header />
       <HeroBanner />
+      {brandConfig.features.enableVehicleFitmentFilter && (
+        <div className="max-w-container mx-auto px-4 mt-3">
+          <MotorcycleFitmentBar />
+        </div>
+      )}
       <ServiceShortcuts />
       <FlashSaleSection products={products} />
 

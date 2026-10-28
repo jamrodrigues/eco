@@ -1,15 +1,15 @@
 {
   "banners": {
     "hero_main_1": {
-      "src": "/images/banners/hero-main-01.jpg",
-      "alt": "Campanha Frete Grátis Sem Mínimo - Ofertas Relâmpago",
+      "src": "/images/vruumoto/hero-banner.jpg",
+      "alt": "Capacete 3D, disco de freio, corrente dourada e amortecedor — peças Vruumoto",
       "aspectRatio": "16:9"
     }
   },
   "products": {
-    "vestido_lovito_preto": {
-      "src": "/images/products/prod-01-main.jpg",
-      "alt": "Vestido Midi Canelado Lovito Gola Alta Elegante",
+    "kit_relacao_freio": {
+      "src": "/images/vruumoto/kit-relacao-freio.jpg",
+      "alt": "Kit Relação Transmissão Aço 1045 com Retentor O-Ring Vruumoto Original",
       "aspectRatio": "1:1"
     }
   }

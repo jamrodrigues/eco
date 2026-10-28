@@ -23,6 +23,18 @@ export type ProductOption = {
   values: { value: string }[]
 }
 
+export type VariantFitmentMetadata = {
+  oem_part_number?: string
+  ean_barcode?: string
+  compatible_motorcycles?: {
+    make: string
+    model: string
+    year_start: number
+    year_end: number
+  }[]
+  viscosity_or_spec?: string
+}
+
 export type ProductVariantDetail = {
   id: string
   title: string
@@ -30,6 +42,7 @@ export type ProductVariantDetail = {
   inventory_quantity: number
   options: { value: string }[]
   calculated_price?: { calculated_amount: number; currency_code: string; original_amount: number }
+  metadata?: VariantFitmentMetadata | null
 }
 
 export type ProductDetail = {
@@ -115,6 +128,7 @@ const PRODUCT_DETAIL_FIELDS = [
   "variants.inventory_quantity",
   "variants.calculated_price",
   "variants.options.value",
+  "variants.metadata",
 ].join(",")
 
 /** Mapeia variant.options (array posicional) para {OptionTitle: value}. */
@@ -172,7 +186,26 @@ export async function getProductByHandle(handle: string) {
   const { products } = await medusaFetch<{ products: ProductDetail[] }>(
     `/store/products?${params.toString()}`
   )
-  return products[0] ?? null
+  const product = products[0] ?? null
+  if (!product) return null
+
+  // A rota nativa /store/products nao expoe variants.metadata (allowlist
+  // do Medusa so libera o metadata do produto, nao da variante) — busca
+  // via rota custom e mescla. Ver apps/backend .../products/[id]/fitment.
+  try {
+    const { fitment } = await medusaFetch<{
+      fitment: Record<string, VariantFitmentMetadata>
+    }>(`/store/products/${product.id}/fitment`)
+    product.variants = product.variants.map((v) => ({
+      ...v,
+      metadata: fitment[v.id] ?? v.metadata,
+    }))
+  } catch {
+    // rota opcional — se falhar, segue sem dados de fitment (produtos
+    // fora da Vruumoto nao tem essa rota relevante de qualquer forma)
+  }
+
+  return product
 }
 
 /** Hash determinístico simples — evita Math.random() no render (mismatch de hidratação). */
