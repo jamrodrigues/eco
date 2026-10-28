@@ -3,9 +3,11 @@
 import { useEffect, useState } from "react"
 import Link from "next/link"
 import { brandConfig } from "@/config/brand.config"
+import { getCurrentCustomer, getSessionToken } from "@/lib/auth"
 
 export default function Header() {
   const [scrolled, setScrolled] = useState(false)
+  const [customerName, setCustomerName] = useState<string | null>(null)
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 40)
@@ -13,12 +15,21 @@ export default function Header() {
     return () => window.removeEventListener("scroll", onScroll)
   }, [])
 
+  useEffect(() => {
+    if (!getSessionToken()) return
+    getCurrentCustomer().then((customer) => {
+      if (customer) setCustomerName(customer.first_name || customer.email)
+    })
+  }, [])
+
   return (
     <header className="sticky top-0 z-50">
       {/* Desktop: 119px (34px top bar + 85px main bar) */}
       <div className="hidden md:block bg-header-gradient text-white h-header">
         <div className="h-headerTopBar max-w-container mx-auto flex items-center justify-end gap-4 px-4 text-xs">
-          <Link href="/login" className="opacity-90 hover:opacity-100 font-semibold">Entrar</Link>
+          <Link href={customerName ? "/conta" : "/login"} className="opacity-90 hover:opacity-100 font-semibold">
+            {customerName || "Entrar"}
+          </Link>
         </div>
         <div className="h-headerMainBar max-w-container mx-auto flex items-center gap-6 px-4">
           <Link href="/" className="text-2xl font-extrabold tracking-tight shrink-0">
