@@ -42,7 +42,7 @@ const CATEGORY_LABELS: Record<string, string> = {
   store_coins: "Moedas",
   pdv: "PDV",
   institutional_pages: "Páginas Institucionais",
-  settings: "Settings (loja/idioma/SEO)",
+  settings: "Configurações (loja/idioma/SEO)",
   maintenance_mode: "Modo Manutenção",
   user_management: "Gestão de Usuários",
 }
