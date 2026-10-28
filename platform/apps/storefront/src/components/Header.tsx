@@ -38,7 +38,7 @@ export default function Header() {
                 onClick={() => setAccountMenuOpen((v) => !v)}
                 className="flex items-center gap-1.5 opacity-90 hover:opacity-100 font-semibold"
               >
-                <span className="material-symbols-outlined text-[16px] leading-none">person</span>
+                <span className="material-symbols-outlined text-[18px] leading-none">account_circle</span>
                 {customerName}
               </button>
               {accountMenuOpen && (
