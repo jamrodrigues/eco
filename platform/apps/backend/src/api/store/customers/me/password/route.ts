@@ -25,19 +25,35 @@ export async function POST(req: MedusaRequest, res: MedusaResponse) {
     return res.status(401).json({ message: "Sessão de cliente inválida." })
   }
 
-  const { password } = (req.body as { password?: string }) || {}
+  const { old_password, password } = (req.body as { old_password?: string; password?: string }) || {}
+  if (!old_password) {
+    return res.status(400).json({ message: "Informe a senha atual." })
+  }
   if (!password || password.length < 8) {
-    return res.status(400).json({ message: "A senha precisa ter pelo menos 8 caracteres." })
+    return res.status(400).json({ message: "A nova senha precisa ter pelo menos 8 caracteres." })
   }
 
   const customerModuleService: any = req.scope.resolve(Modules.CUSTOMER)
   const customer = await customerModuleService.retrieveCustomer(customerId)
 
+  const authModuleService: any = req.scope.resolve(Modules.AUTH)
+
+  // Confere a senha atual de verdade antes de trocar -- sem isso, qualquer
+  // sessão já aberta (ex: dispositivo destravado) poderia trocar a senha
+  // sem o dono saber a senha real. Mesmo shape que o login usa
+  // (EmailPassAuthService.authenticate lê userData.body.email/password --
+  // node_modules/@medusajs/auth-emailpass/dist/services/emailpass.js).
+  const authCheck = await authModuleService.authenticate("emailpass", {
+    body: { email: customer.email, password: old_password },
+  })
+  if (!authCheck.success) {
+    return res.status(400).json({ message: "Senha atual incorreta." })
+  }
+
   // Para o provider "emailpass", entity_id é o e-mail (identificador do
   // provider_identity), não o customer_id -- confirmado em
   // node_modules/@medusajs/medusa/dist/api/auth/[actor_type]/[auth_provider]/reset-password/route.js
   // (entityId: identifier, onde identifier é o e-mail do request body).
-  const authModuleService: any = req.scope.resolve(Modules.AUTH)
   const result = await authModuleService.updateProvider("emailpass", {
     entity_id: customer.email,
     email: customer.email,

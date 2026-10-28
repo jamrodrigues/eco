@@ -124,7 +124,7 @@ export default function ContaPage() {
   const [profileSaving, setProfileSaving] = useState(false)
   const [profileMessage, setProfileMessage] = useState<string | null>(null)
 
-  const [passwordForm, setPasswordForm] = useState({ password: "", confirm: "" })
+  const [passwordForm, setPasswordForm] = useState({ old_password: "", password: "", confirm: "" })
   const [passwordSaving, setPasswordSaving] = useState(false)
   const [passwordMessage, setPasswordMessage] = useState<string | null>(null)
   const [passwordError, setPasswordError] = useState<string | null>(null)
@@ -234,8 +234,12 @@ export default function ContaPage() {
     if (!token) return
     setPasswordError(null)
     setPasswordMessage(null)
+    if (!passwordForm.old_password) {
+      setPasswordError("Informe a senha atual.")
+      return
+    }
     if (passwordForm.password.length < 8) {
-      setPasswordError("A senha precisa ter pelo menos 8 caracteres.")
+      setPasswordError("A nova senha precisa ter pelo menos 8 caracteres.")
       return
     }
     if (passwordForm.password !== passwordForm.confirm) {
@@ -244,8 +248,8 @@ export default function ContaPage() {
     }
     setPasswordSaving(true)
     try {
-      await changeMyPassword(token, passwordForm.password)
-      setPasswordForm({ password: "", confirm: "" })
+      await changeMyPassword(token, passwordForm.old_password, passwordForm.password)
+      setPasswordForm({ old_password: "", password: "", confirm: "" })
       setPasswordMessage("Senha alterada com sucesso.")
     } catch (e) {
       setPasswordError(e instanceof Error ? e.message : "Não foi possível trocar a senha.")
@@ -258,7 +262,7 @@ export default function ContaPage() {
     return (
       <>
         <Header />
-        <section className="max-w-container mx-auto px-4 py-16 mb-20 md:mb-10 min-h-[50vh] flex items-center justify-center text-textSecondary">
+        <section className="w-full max-w-container mx-auto px-4 py-16 mb-20 md:mb-10 min-h-[50vh] flex items-center justify-center text-textSecondary">
           Carregando...
         </section>
         <BottomNav />
@@ -270,7 +274,7 @@ export default function ContaPage() {
     return (
       <>
         <Header />
-        <section className="max-w-container mx-auto px-4 py-16 mb-20 md:mb-10 min-h-[50vh] flex flex-col items-center justify-center text-center">
+        <section className="w-full max-w-container mx-auto px-4 py-16 mb-20 md:mb-10 min-h-[50vh] flex flex-col items-center justify-center text-center">
           <span className="text-5xl mb-4">👤</span>
           <h1 className="text-xl font-bold text-textPrimary mb-2">Você ainda não entrou</h1>
           <p className="text-textSecondary text-sm mb-4">
@@ -295,7 +299,7 @@ export default function ContaPage() {
   return (
     <>
       <Header />
-      <section className="max-w-container mx-auto px-4 py-6 mb-20 md:mb-10">
+      <section className="w-full max-w-container mx-auto px-4 py-6 mb-20 md:mb-10">
         {error && <p className="text-sm text-badgeOfficial mb-4">{error}</p>}
 
         <div className="flex flex-col md:flex-row gap-6 items-start">
@@ -446,6 +450,13 @@ export default function ContaPage() {
                 {passwordError && <p className="text-xs text-badgeOfficial mb-3">{passwordError}</p>}
                 {passwordMessage && <p className="text-xs text-green-600 mb-3">{passwordMessage}</p>}
                 <div className="grid grid-cols-1 gap-3 max-w-xs text-sm">
+                  <input
+                    type="password"
+                    value={passwordForm.old_password}
+                    onChange={(e) => setPasswordForm({ ...passwordForm, old_password: e.target.value })}
+                    placeholder="Senha atual"
+                    className="border border-black/[.09] rounded px-2 py-1.5"
+                  />
                   <input
                     type="password"
                     value={passwordForm.password}

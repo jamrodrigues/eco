@@ -169,12 +169,14 @@ export async function confirmPasswordReset(token: string, email: string, newPass
  * Troca a senha de um cliente JÁ LOGADO (`/conta` -> aba Trocar Senha).
  * Rota própria `POST /store/customers/me/password` -- a rota nativa de
  * reset (`confirmPasswordReset`) rejeita token de sessão de propósito.
+ * Exige a senha atual (verificada de verdade no backend via
+ * authModuleService.authenticate), não só um campo decorativo.
  */
-export async function changeMyPassword(token: string, newPassword: string) {
+export async function changeMyPassword(token: string, oldPassword: string, newPassword: string) {
   await authFetch("/store/customers/me/password", {
     method: "POST",
     headers: { Authorization: `Bearer ${token}` },
-    body: JSON.stringify({ password: newPassword }),
+    body: JSON.stringify({ old_password: oldPassword, password: newPassword }),
   })
 }
 
