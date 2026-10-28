@@ -90,10 +90,10 @@ export default function OrderSuccessPage() {
   return (
     <>
       <Header />
-      <div className="max-w-container mx-auto px-4 py-10 flex flex-col items-center text-center">
+      <div className="w-full max-w-container mx-auto px-4 py-10 flex flex-col items-center text-center">
         {status === "paid" ? (
           <div className="bg-freeShipping/10 text-freeShipping font-bold text-lg rounded-full px-6 py-3 flex items-center gap-2">
-            <MaterialIcon name="check_circle" /> Pagamento Pix Compensado!
+            <MaterialIcon name="check_circle" className="text-xl leading-none" /> Pagamento Pix Compensado!
           </div>
         ) : (
           <div className="flex items-center gap-2 text-textSecondary text-sm">

@@ -13,7 +13,7 @@ export default function ServiceShortcuts() {
   const items = brandConfig.serviceShortcuts ?? defaultItems
   const columns = Math.ceil(items.length / 2)
   return (
-    <section className="max-w-container mx-auto px-4 mt-3">
+    <section className="w-full max-w-container mx-auto px-4 mt-3">
       <div
         className="grid gap-x-2 gap-y-3 justify-items-center md:flex md:justify-between md:gap-0"
         style={{

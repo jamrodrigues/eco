@@ -47,6 +47,9 @@ export default async function seedBr({
           countries: ["br"],
           payment_providers: [
             "pp_system_default",
+            "pp_mercadopago-br_pix_br",
+            "pp_mercadopago-br_card_br",
+            "pp_mercadopago-br_boleto_br",
             "pp_pagarme-br_pix_br",
             "pp_pagarme-br_card_br",
             "pp_pagarme-br_boleto_br",

@@ -3,13 +3,14 @@
 import { useEffect, useState } from "react"
 import Link from "next/link"
 import { brandConfig } from "@/config/brand.config"
+import { getCurrentCustomer, getSessionToken, logoutCustomer } from "@/lib/auth"
+import { getCartIfExists, onCartUpdated } from "@/lib/cart"
 import MaterialIcon from "./MaterialIcon"
-import { CART_CHANGED_EVENT, getCartIfExists } from "@/lib/cart"
-
-const popularKeywords = ["Kit relação", "Pastilha de freio", "Capacete", "Óleo 10W30"]
 
 export default function Header() {
   const [scrolled, setScrolled] = useState(false)
+  const [customerName, setCustomerName] = useState<string | null>(null)
+  const [accountMenuOpen, setAccountMenuOpen] = useState(false)
   const [cartCount, setCartCount] = useState(0)
 
   useEffect(() => {
@@ -19,14 +20,20 @@ export default function Header() {
   }, [])
 
   useEffect(() => {
-    const refreshCount = () => {
+    if (!getSessionToken()) return
+    getCurrentCustomer().then((customer) => {
+      if (customer) setCustomerName(customer.first_name || customer.email)
+    })
+  }, [])
+
+  useEffect(() => {
+    const refreshCartCount = () => {
       getCartIfExists().then((cart) => {
-        setCartCount(cart?.items?.reduce((sum, item) => sum + item.quantity, 0) ?? 0)
+        setCartCount(cart ? cart.items.reduce((sum, item) => sum + item.quantity, 0) : 0)
       })
     }
-    refreshCount()
-    window.addEventListener(CART_CHANGED_EVENT, refreshCount)
-    return () => window.removeEventListener(CART_CHANGED_EVENT, refreshCount)
+    refreshCartCount()
+    return onCartUpdated(refreshCartCount)
   }, [])
 
   return (
@@ -34,10 +41,46 @@ export default function Header() {
       {/* Desktop: 119px (34px top bar + 85px main bar) */}
       <div className="hidden md:block bg-header-gradient text-white h-header">
         <div className="h-headerTopBar max-w-container mx-auto flex items-center justify-end gap-4 px-4 text-xs">
-          <Link href="/institucional/central-do-vendedor" className="opacity-90 hover:opacity-100">Central do Vendedor</Link>
-          <Link href="/notificacoes" className="opacity-90 hover:opacity-100">Notificações</Link>
-          <span className="opacity-70 cursor-default">Português</span>
-          <Link href="/login" className="opacity-90 hover:opacity-100 font-semibold">Entrar</Link>
+          {customerName ? (
+            <div
+              className="relative"
+              onMouseEnter={() => setAccountMenuOpen(true)}
+              onMouseLeave={() => setAccountMenuOpen(false)}
+            >
+              <button
+                onClick={() => setAccountMenuOpen((v) => !v)}
+                className="flex items-center gap-1.5 opacity-90 hover:opacity-100 font-semibold"
+              >
+                <MaterialIcon name="account_circle" className="text-[18px] leading-none" />
+                {customerName}
+              </button>
+              {accountMenuOpen && (
+                <div className="absolute right-0 top-full w-40 bg-white text-textPrimary rounded shadow-lg border border-black/[.09] py-1 z-50">
+                  <Link
+                    href="/conta"
+                    onClick={() => setAccountMenuOpen(false)}
+                    className="block px-3 py-2 text-xs hover:bg-black/[.03]"
+                  >
+                    Minha conta
+                  </Link>
+                  <button
+                    onClick={() => {
+                      logoutCustomer()
+                      setAccountMenuOpen(false)
+                      window.location.href = "/"
+                    }}
+                    className="block w-full text-left px-3 py-2 text-xs hover:bg-black/[.03] text-badgeOfficial"
+                  >
+                    Sair
+                  </button>
+                </div>
+              )}
+            </div>
+          ) : (
+            <Link href="/login" className="opacity-90 hover:opacity-100 font-semibold">
+              Entrar
+            </Link>
+          )}
         </div>
         <div className="h-headerMainBar max-w-container mx-auto flex items-center gap-6 px-4">
           <Link href="/" className="flex items-center shrink-0">
@@ -64,11 +107,6 @@ export default function Header() {
               <button className="bg-brand px-5 text-white flex items-center justify-center shrink-0" aria-label="Buscar">
                 <MaterialIcon name="search" className="text-xl" />
               </button>
-            </div>
-            <div className="flex gap-3 mt-1 text-xs text-white/90">
-              {popularKeywords.map((kw) => (
-                <span key={kw} className="cursor-pointer hover:underline">{kw}</span>
-              ))}
             </div>
           </div>
           <Link href="/cart" className="relative shrink-0">
@@ -107,7 +145,9 @@ export default function Header() {
             </span>
           )}
         </Link>
-        <Link href="/chat"><MaterialIcon name="chat_bubble" className="text-xl" /></Link>
+        <Link href="/chat">
+          <MaterialIcon name="chat_bubble" className="text-xl" />
+        </Link>
       </div>
     </header>
   )

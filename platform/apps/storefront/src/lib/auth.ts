@@ -68,6 +68,7 @@ export type CurrentCustomer = {
   email: string
   first_name: string | null
   last_name: string | null
+  phone: string | null
   metadata: Record<string, unknown> | null
 }
 
@@ -151,8 +152,10 @@ export async function requestPasswordReset(email: string) {
 }
 
 /**
- * Confirma a nova senha usando o token recebido por e-mail como Bearer
- * (não é um login — é o token de reset, com purpose "reset").
+ * Confirma a nova senha usando o token de reset recebido por e-mail
+ * (fluxo "esqueci minha senha"). A rota nativa exige
+ * `token.purpose === "reset"` -- não serve para um cliente já logado
+ * trocar a própria senha (ver changeMyPassword, que usa rota própria).
  */
 export async function confirmPasswordReset(token: string, email: string, newPassword: string) {
   await authFetch("/auth/customer/emailpass/update", {
@@ -160,4 +163,40 @@ export async function confirmPasswordReset(token: string, email: string, newPass
     headers: { Authorization: `Bearer ${token}` },
     body: JSON.stringify({ email, password: newPassword }),
   })
+}
+
+/**
+ * Troca a senha de um cliente JÁ LOGADO (`/conta` -> aba Trocar Senha).
+ * Rota própria `POST /store/customers/me/password` -- a rota nativa de
+ * reset (`confirmPasswordReset`) rejeita token de sessão de propósito.
+ * Exige a senha atual (verificada de verdade no backend via
+ * authModuleService.authenticate), não só um campo decorativo.
+ */
+export async function changeMyPassword(token: string, oldPassword: string, newPassword: string) {
+  await authFetch("/store/customers/me/password", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ old_password: oldPassword, password: newPassword }),
+  })
+}
+
+/**
+ * Atualiza nome/sobrenome/telefone do cliente autenticado (`/conta` ->
+ * aba Perfil). Rota nativa `POST /store/customers/me`.
+ */
+export async function updateMyProfile(
+  token: string,
+  patch: {
+    first_name?: string
+    last_name?: string
+    phone?: string
+    metadata?: Record<string, unknown>
+  }
+): Promise<CurrentCustomer> {
+  const { customer } = await authFetch("/store/customers/me", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` },
+    body: JSON.stringify(patch),
+  })
+  return customer
 }

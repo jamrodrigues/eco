@@ -1,7 +1,8 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
+import Script from "next/script"
 import Header from "@/components/Header"
 import MaterialIcon from "@/components/MaterialIcon"
 import { formatBRL, getShippingByCep } from "@/lib/medusa"
@@ -21,7 +22,8 @@ import {
   createPaymentCollection,
   createPaymentSession,
   completeCart,
-  PAYMENT_PROVIDER_IDS,
+  fetchActivePaymentGateway,
+  getPaymentProviderIdForGateway,
   trueAvailableCoins,
   alreadyRedeemedCoins,
   clearStoredCartId,
@@ -31,6 +33,78 @@ import { getCurrentCustomer, getSessionToken } from "@/lib/auth"
 const STANDARD_SHIPPING_OPTION_ID = process.env.NEXT_PUBLIC_STANDARD_SHIPPING_OPTION_ID || ""
 const EXPRESS_SHIPPING_OPTION_ID = process.env.NEXT_PUBLIC_EXPRESS_SHIPPING_OPTION_ID || ""
 const PICKUP_SHIPPING_OPTION_ID = process.env.NEXT_PUBLIC_PICKUP_SHIPPING_OPTION_ID || ""
+const MP_PUBLIC_KEY = process.env.NEXT_PUBLIC_MP_PUBLIC_KEY || ""
+
+/**
+ * Mercado Pago JS SDK v2 (`https://sdk.mercadopago.com/js/v2`) has no
+ * official TypeScript types for the vanilla `window.MercadoPago` global
+ * (the published `@mercadopago/sdk-js` npm package is just a tiny loader).
+ * These are the minimal shapes this page actually touches: Secure Fields
+ * (iframe-mounted card number/expiry/CVV inputs — the card data itself
+ * never reaches this page's JS context, only MP's own iframes) and
+ * `createCardToken`, per MP's current "Checkout API" Core Methods guide.
+ */
+type MpFieldElement = {
+  unmount: () => void
+  // `binChange` fires as the shopper types a card number into the Secure
+  // Field iframe — it's how we learn the card's BIN (first 6 digits)
+  // *without* ever reading the PAN ourselves, per MP's Core Methods guide.
+  on: (event: "binChange", callback: (data: { bin: string }) => void) => void
+}
+type MpFieldBuilder = { mount: (elementId: string) => MpFieldElement }
+type MpTokenizeError = { cause?: { code?: string; description?: string }[]; message?: string }
+type MpInstance = {
+  fields: {
+    create: (fieldType: string, options: Record<string, unknown>) => MpFieldBuilder
+    createCardToken: (data: {
+      cardholderName: string
+      identificationType: string
+      identificationNumber: string
+    }) => Promise<{ id: string }>
+  }
+  getPaymentMethods: (data: { bin: string }) => Promise<{ results: { id: string }[] }>
+}
+
+declare global {
+  interface Window {
+    MercadoPago?: new (publicKey: string, options?: Record<string, unknown>) => MpInstance
+  }
+}
+
+// Mapeamento best-effort dos códigos de erro de validação client-side do
+// SDK da Mercado Pago (tabela "Data entry errors" da doc oficial) para
+// mensagens em pt-BR. Um código não mapeado cai na mensagem genérica.
+const MP_FIELD_ERROR_MESSAGES: Record<string, string> = {
+  "205": "Informe o número do cartão.",
+  "208": "Selecione o mês de validade.",
+  "209": "Selecione o ano de validade.",
+  "212": "Informe o tipo de documento.",
+  "213": "Informe o documento do titular.",
+  "214": "Informe o CPF do titular do cartão.",
+  "220": "Selecione o banco emissor.",
+  "221": "Informe o nome impresso no cartão.",
+  "224": "Informe o código de segurança (CVV).",
+  E203: "Código de segurança (CVV) inválido.",
+  E301: "Número de cartão inválido.",
+  "316": "Nome do titular inválido.",
+  "322": "Tipo de documento inválido.",
+  "323": "Documento do titular inválido.",
+  "324": "CPF inválido.",
+  "325": "Mês de validade inválido.",
+  "326": "Ano de validade inválido — verifique se o cartão não está vencido.",
+}
+
+function describeMpTokenError(err: unknown): string {
+  const cause = (err as MpTokenizeError)?.cause
+  if (Array.isArray(cause) && cause.length > 0) {
+    const messages = cause
+      .map((c) => (c.code && MP_FIELD_ERROR_MESSAGES[c.code]) || c.description)
+      .filter((m): m is string => Boolean(m))
+    if (messages.length > 0) return Array.from(new Set(messages)).join(" ")
+  }
+  if (err instanceof Error && err.message) return err.message
+  return "Não foi possível validar os dados do cartão. Verifique e tente novamente."
+}
 
 type ShippingMethodId = "standard" | "express" | "pickup"
 
@@ -90,15 +164,28 @@ export default function CheckoutPage() {
   const [toggling, setToggling] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
+  const [cardHolderName, setCardHolderName] = useState("")
+  const [installments, setInstallments] = useState(1)
+  const [paymentMethodId, setPaymentMethodId] = useState<string | null>(null)
+  const [mpReady, setMpReady] = useState(false)
+  const mpRef = useRef<MpInstance | null>(null)
+  const mpFieldsRef = useRef<{
+    cardNumber?: MpFieldElement
+    expirationDate?: MpFieldElement
+    securityCode?: MpFieldElement
+  }>({})
+
   const [address, setAddress] = useState({
     first_name: "Cliente",
     last_name: "Convidado",
     phone: "11999999999",
     address_1: "Av. Paulista, 1000",
+    neighborhood: "",
     city: "São Paulo",
     province: "SP",
     postal_code: "01310-100",
     country_code: "br",
+    cpf: "",
   })
   const [email, setEmail] = useState("")
 
@@ -170,6 +257,103 @@ export default function CheckoutPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  // Monta os Secure Fields da Mercado Pago (iframes próprios da MP para
+  // número do cartão, validade e CVV — esses dados nunca chegam ao JS
+  // desta página, só ao iframe da MP) só quando o método "card" está
+  // selecionado e o SDK já carregou. Desmonta ao trocar de método/sair
+  // da página pra não deixar iframes órfãos.
+  //
+  // O listener `binChange` no field de número do cartão é como
+  // descobrimos a bandeira (payment_method_id, ex: "master"/"visa") sem
+  // nunca ler o PAN: a MP só nos entrega o BIN (6 primeiros dígitos) do
+  // cartão sendo digitado, e `mp.getPaymentMethods({ bin })` devolve os
+  // métodos de pagamento compatíveis com esse BIN — mesmo mecanismo do
+  // guia oficial "Checkout API / Core Methods".
+  useEffect(() => {
+    if (!mpReady || method !== "card") return
+    const mp = mpRef.current
+    if (!mp) return
+
+    setPaymentMethodId(null)
+    const fieldStyle = { style: { fontSize: "14px", color: "#111827" } }
+    const cardNumberField = mp.fields
+      .create("cardNumber", { placeholder: "0000 0000 0000 0000", ...fieldStyle })
+      .mount("mp-card-number")
+    mpFieldsRef.current.cardNumber = cardNumberField
+    mpFieldsRef.current.expirationDate = mp.fields
+      .create("expirationDate", { placeholder: "MM/AA", ...fieldStyle })
+      .mount("mp-card-expiry")
+    mpFieldsRef.current.securityCode = mp.fields
+      .create("securityCode", { placeholder: "CVV", ...fieldStyle })
+      .mount("mp-card-cvv")
+
+    cardNumberField.on("binChange", async (data) => {
+      if (!data.bin) {
+        setPaymentMethodId(null)
+        return
+      }
+      try {
+        const { results } = await mp.getPaymentMethods({ bin: data.bin })
+        setPaymentMethodId(results?.[0]?.id ?? null)
+      } catch {
+        setPaymentMethodId(null)
+      }
+    })
+
+    return () => {
+      mpFieldsRef.current.cardNumber?.unmount()
+      mpFieldsRef.current.expirationDate?.unmount()
+      mpFieldsRef.current.securityCode?.unmount()
+      mpFieldsRef.current = {}
+      setPaymentMethodId(null)
+    }
+  }, [mpReady, method])
+
+  /**
+   * Tokeniza o cartão no cliente via Mercado Pago (nunca manda número,
+   * validade ou CVV pro nosso backend — só o token de uso único que a
+   * própria MP gera, mais a bandeira detectada via BIN). Erros de
+   * validação (cartão inválido, vencido, CVV errado, CPF faltando,
+   * bandeira não identificada) são pegos aqui e lançados com mensagem em
+   * pt-BR; quem chama deixa isso cair no catch de handlePlaceOrder, que
+   * já exibe via setError.
+   */
+  async function tokenizeCard(): Promise<{
+    token: string
+    installments: number
+    payment_method_id: string
+  }> {
+    const mp = mpRef.current
+    if (!mp) {
+      throw new Error(
+        "Não foi possível carregar o Mercado Pago. Atualize a página e tente novamente."
+      )
+    }
+    if (!cardHolderName.trim()) {
+      throw new Error("Informe o nome impresso no cartão.")
+    }
+    const cpfDigits = address.cpf.replace(/\D/g, "")
+    if (!cpfDigits) {
+      throw new Error("Informe o CPF do titular do cartão (campo CPF acima).")
+    }
+    if (!paymentMethodId) {
+      throw new Error(
+        "Não foi possível identificar a bandeira do cartão. Verifique o número digitado."
+      )
+    }
+
+    try {
+      const token = await mp.fields.createCardToken({
+        cardholderName: cardHolderName.trim(),
+        identificationType: "CPF",
+        identificationNumber: cpfDigits,
+      })
+      return { token: token.id, installments, payment_method_id: paymentMethodId }
+    } catch (err) {
+      throw new Error(describeMpTokenError(err))
+    }
+  }
+
   async function handleToggle(
     next: Partial<{ coupon: boolean; freeShipping: boolean; coins: boolean; method: PaymentMethod }>
   ) {
@@ -220,11 +404,62 @@ export default function CheckoutPage() {
     }
   }
 
+  /**
+   * O checkout só coleta "Endereço completo" como um campo livre (ex. "Av.
+   * Paulista, 1000"), mas a Orders API do Mercado Pago exige rua e número
+   * separados pro payer do boleto. Extrai o último grupo de dígitos como
+   * número; o resto (sem pontuação à direita) vira o nome da rua.
+   */
+  function buildPayerAddress() {
+    const raw = address.address_1.trim()
+    const match = raw.match(/^(.*?)[,\s]*([0-9]+)\s*$/)
+    const streetName = match ? match[1].trim() : raw
+    const streetNumber = match ? match[2] : "S/N"
+    return {
+      zip_code: address.postal_code.replace(/\D/g, ""),
+      street_name: streetName || raw,
+      street_number: streetNumber,
+      neighborhood: address.neighborhood.trim(),
+      state: address.province,
+      city: address.city,
+    }
+  }
+
   async function handlePlaceOrder() {
     if (!cart) return
     setPlacing(true)
     setError(null)
     try {
+      // Resolve o gateway ativo ANTES de qualquer coisa específica da MP: se
+      // o admin trocou pro Pagar.me (ex.: MP fora do ar), o cartão não pode
+      // depender do SDK/public key da Mercado Pago.
+      const gateway = await fetchActivePaymentGateway()
+      const providerId = getPaymentProviderIdForGateway(
+        gateway,
+        method as "pix" | "card" | "boleto"
+      )
+
+      // Mercado Pago exige CPF do titular pra pix e boleto (não só cartão),
+      // e nome + bairro completos pra boleto.
+      if (gateway === "mercadopago" && (method === "pix" || method === "boleto")) {
+        if (!address.cpf.replace(/\D/g, "")) {
+          throw new Error("Informe o CPF do titular (campo CPF acima).")
+        }
+        if (method === "boleto" && !address.neighborhood.trim()) {
+          throw new Error("Informe o bairro do endereço de entrega.")
+        }
+      }
+
+      // Tokeniza antes de tocar no carrinho: se a MP recusar os dados do
+      // cartão (número/validade/CVV/CPF inválido), não queremos ter
+      // atualizado endereço nem criado payment collection pra nada.
+      const cardSessionData =
+        method === "card"
+          ? gateway === "mercadopago"
+            ? { ...(await tokenizeCard()), cart_id: cart.id }
+            : { cart_id: cart.id }
+          : undefined
+
       await updateCartDetails(cart.id, {
         email,
         shipping_address: address,
@@ -232,9 +467,24 @@ export default function CheckoutPage() {
       await recalc(cart, useCoins, useCoupon, useFreeShipping, method === "pix")
 
       const paymentCollection = await createPaymentCollection(cart.id)
+      const cpfDigitsForOrder = address.cpf.replace(/\D/g, "")
+      const sessionData =
+        method === "boleto"
+          ? {
+              payer_cpf: cpfDigitsForOrder,
+              payer_first_name: address.first_name,
+              payer_last_name: address.last_name,
+              payer_address: buildPayerAddress(),
+              cart_id: cart.id,
+            }
+          : method === "pix"
+            ? { payer_cpf: cpfDigitsForOrder, cart_id: cart.id }
+            : cardSessionData
       const session = await createPaymentSession(
         paymentCollection.id,
-        PAYMENT_PROVIDER_IDS[method as keyof typeof PAYMENT_PROVIDER_IDS]
+        providerId,
+        sessionData,
+        getSessionToken() || undefined
       )
 
       if (method === "pix" && session) {
@@ -269,7 +519,7 @@ export default function CheckoutPage() {
     return (
       <>
         <Header />
-        <div className="max-w-container mx-auto px-4 py-10 text-textSecondary">Carregando...</div>
+        <div className="w-full max-w-container mx-auto px-4 py-10 text-textSecondary">Carregando...</div>
       </>
     )
   }
@@ -280,7 +530,16 @@ export default function CheckoutPage() {
   return (
     <>
       <Header />
-      <div className="max-w-container mx-auto px-4 py-6 pb-10 grid md:grid-cols-[1fr_380px] gap-6">
+      <Script
+        src="https://sdk.mercadopago.com/js/v2"
+        strategy="afterInteractive"
+        onLoad={() => {
+          if (!MP_PUBLIC_KEY || !window.MercadoPago) return
+          mpRef.current = new window.MercadoPago(MP_PUBLIC_KEY, { locale: "pt-BR" })
+          setMpReady(true)
+        }}
+      />
+      <div className="w-full max-w-container mx-auto px-4 py-6 pb-10 grid md:grid-cols-[1fr_380px] gap-6">
         <div className="space-y-4">
           <div className="bg-surface border border-black/[.09] rounded overflow-hidden">
             <div
@@ -328,6 +587,13 @@ export default function CheckoutPage() {
                   className="col-span-2 border border-black/[.09] rounded px-2 py-1.5"
                 />
                 <input
+                  value={address.neighborhood}
+                  onChange={(e) => setAddress({ ...address, neighborhood: e.target.value })}
+                  placeholder="Bairro (obrigatório para Boleto)"
+                  required={method === "boleto"}
+                  className="col-span-2 border border-black/[.09] rounded px-2 py-1.5"
+                />
+                <input
                   value={address.city}
                   onChange={(e) => setAddress({ ...address, city: e.target.value })}
                   placeholder="Cidade"
@@ -343,6 +609,13 @@ export default function CheckoutPage() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="E-mail"
+                  className="col-span-2 border border-black/[.09] rounded px-2 py-1.5"
+                />
+                <input
+                  value={address.cpf}
+                  onChange={(e) => setAddress({ ...address, cpf: e.target.value })}
+                  placeholder="CPF (obrigatório para Pix/Boleto/Cartão)"
+                  required={method === "pix" || method === "boleto" || method === "card"}
                   className="col-span-2 border border-black/[.09] rounded px-2 py-1.5"
                 />
               </div>
@@ -437,6 +710,58 @@ export default function CheckoutPage() {
                 </button>
               ))}
             </div>
+
+            {method === "card" && (
+              <div className="mt-3 pt-3 border-t border-black/[.09] space-y-2">
+                <input
+                  value={cardHolderName}
+                  onChange={(e) => setCardHolderName(e.target.value)}
+                  placeholder="Nome impresso no cartão"
+                  className="w-full border border-black/[.09] rounded px-2 py-1.5 text-sm"
+                />
+                {/* Divs vazios — a Mercado Pago monta um iframe próprio
+                    em cada um (Secure Fields). Número, validade e CVV
+                    nunca passam pelo state/JS desta página. */}
+                <div
+                  id="mp-card-number"
+                  className="border border-black/[.09] rounded px-2 py-1.5 text-sm h-[38px]"
+                />
+                {/* Altura sempre reservada (mesmo vazio) -- o SDK MP monta os
+                    iframes de validade/CVV abaixo em posição fixa; sem essa
+                    reserva, o texto condicional de bandeira detectada
+                    empurra esses campos ao aparecer. */}
+                <p className="text-[11px] text-textSecondary h-[14px] flex items-center gap-1">
+                  {paymentMethodId && (
+                    <>
+                      <MaterialIcon name="credit_card" className="text-[13px] leading-none" />
+                      {`Bandeira detectada: ${paymentMethodId}`}
+                    </>
+                  )}
+                </p>
+                <div className="grid grid-cols-2 gap-2">
+                  <div
+                    id="mp-card-expiry"
+                    className="border border-black/[.09] rounded px-2 py-1.5 text-sm h-[38px]"
+                  />
+                  <div
+                    id="mp-card-cvv"
+                    className="border border-black/[.09] rounded px-2 py-1.5 text-sm h-[38px]"
+                  />
+                </div>
+                <select
+                  value={installments}
+                  onChange={(e) => setInstallments(Number(e.target.value))}
+                  className="w-full border border-black/[.09] rounded px-2 py-1.5 text-sm"
+                >
+                  <option value={1}>1x sem juros</option>
+                  <option value={2}>2x sem juros</option>
+                  <option value={3}>3x sem juros</option>
+                </select>
+                <p className="text-[11px] text-textSecondary">
+                  Informe também o CPF do titular no campo CPF acima.
+                </p>
+              </div>
+            )}
           </div>
         </div>
 

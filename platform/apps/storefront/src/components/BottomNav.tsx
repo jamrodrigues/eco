@@ -5,8 +5,7 @@ const tabs = [
   { icon: "home", label: "Início", href: "/" },
   { icon: "movie", label: "Vídeo", href: "/video" },
   { icon: "live_tv", label: "Live", href: "/live" },
-  { icon: "notifications", label: "Notificações", href: "/notificacoes" },
-  { icon: "person", label: "Eu", href: "/conta" },
+  { icon: "account_circle", label: "Eu", href: "/conta" },
 ]
 
 export default function BottomNav() {

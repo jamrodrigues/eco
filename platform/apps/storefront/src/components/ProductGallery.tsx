@@ -79,7 +79,8 @@ export default function ProductGallery({
           <MaterialIcon name="share" className="text-base" /> Compartilhar
         </a>
         <button type="button" className="hover:text-brand flex items-center gap-1">
-          <MaterialIcon name="favorite" className="text-base" /> Favoritar (3.421)
+          <MaterialIcon name="favorite" className="text-base" /> Favoritar
+
         </button>
       </div>
     </div>

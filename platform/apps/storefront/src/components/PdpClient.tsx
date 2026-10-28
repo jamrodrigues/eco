@@ -104,7 +104,7 @@ export default function PdpClient({ product }: { product: ProductDetail }) {
         : []
 
   return (
-    <div className="max-w-container mx-auto px-4 py-6 pb-24 md:pb-10">
+    <div className="w-full max-w-container mx-auto px-4 py-6 pb-24 md:pb-10">
       {brandConfig.features.enableVehicleFitmentFilter && (
         <div className="mb-4">
           <MotorcycleFitmentBar onChange={setMyBike} />
@@ -236,15 +236,15 @@ export default function PdpClient({ product }: { product: ProductDetail }) {
       <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-surface border-t border-black/[.09] px-3 py-2 flex items-center gap-2">
         <a
           href="/chat"
-          className="w-11 h-11 flex items-center justify-center rounded-full bg-freeShipping/10 text-freeShipping text-lg"
+          className="w-11 h-11 flex items-center justify-center rounded-full bg-freeShipping/10 text-freeShipping"
         >
-          <MaterialIcon name="chat_bubble" />
+          <MaterialIcon name="chat_bubble" className="text-xl" />
         </a>
         <a
           href="/cart"
-          className="w-11 h-11 flex items-center justify-center rounded-full bg-canvas text-lg"
+          className="w-11 h-11 flex items-center justify-center rounded-full bg-canvas"
         >
-          <MaterialIcon name="shopping_cart" />
+          <MaterialIcon name="shopping_cart" className="text-xl" />
         </a>
         <button
           type="button"

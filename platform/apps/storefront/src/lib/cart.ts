@@ -4,6 +4,26 @@ import { BACKEND_URL, PUBLISHABLE_KEY, REGION_ID, SALES_CHANNEL_ID } from "./med
 
 const CART_ID_KEY = "ecommerce_cart_id"
 
+/**
+ * Evento disparado sempre que o carrinho muda (item adicionado/removido/
+ * quantidade alterada), pra qualquer componente montado em outra parte da
+ * árvore (ex: o badge de contagem no ícone do carrinho do Header) se
+ * atualizar sem precisar de um estado global/contexto compartilhado.
+ */
+const CART_UPDATED_EVENT = "cart:updated"
+
+function notifyCartUpdated() {
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new Event(CART_UPDATED_EVENT))
+  }
+}
+
+export function onCartUpdated(handler: () => void): () => void {
+  if (typeof window === "undefined") return () => {}
+  window.addEventListener(CART_UPDATED_EVENT, handler)
+  return () => window.removeEventListener(CART_UPDATED_EVENT, handler)
+}
+
 export type CartItem = {
   id: string
   title: string
@@ -85,15 +105,7 @@ export function clearStoredCartId() {
   } catch {
     // ver storeCartId
   }
-  notifyCartChanged()
-}
-
-/** Header escuta esse evento pra atualizar o contador do ícone do carrinho. */
-export const CART_CHANGED_EVENT = "cart:changed"
-
-function notifyCartChanged() {
-  if (typeof window === "undefined") return
-  window.dispatchEvent(new Event(CART_CHANGED_EVENT))
+  notifyCartUpdated()
 }
 
 export async function getCartIfExists(): Promise<Cart | null> {
@@ -145,7 +157,7 @@ export async function addLineItem(cartId: string, variantId: string, quantity: n
     method: "POST",
     body: JSON.stringify({ variant_id: variantId, quantity }),
   })
-  notifyCartChanged()
+  notifyCartUpdated()
   return cart
 }
 
@@ -154,7 +166,7 @@ export async function updateLineItemQuantity(cartId: string, lineItemId: string,
     `/store/carts/${cartId}/line-items/${lineItemId}`,
     { method: "POST", body: JSON.stringify({ quantity }) }
   )
-  notifyCartChanged()
+  notifyCartUpdated()
   return cart
 }
 
@@ -163,7 +175,7 @@ export async function removeLineItem(cartId: string, lineItemId: string) {
     `/store/carts/${cartId}/line-items/${lineItemId}`,
     { method: "DELETE" }
   )
-  notifyCartChanged()
+  notifyCartUpdated()
   return cart
 }
 
@@ -207,7 +219,9 @@ export type PixSessionData = {
 
 export async function createPaymentSession(
   paymentCollectionId: string,
-  providerId: string
+  providerId: string,
+  data?: Record<string, unknown>,
+  token?: string
 ) {
   const { payment_collection } = await fetchJson<{
     payment_collection: {
@@ -215,7 +229,8 @@ export async function createPaymentSession(
     }
   }>(`/store/payment-collections/${paymentCollectionId}/payment-sessions`, {
     method: "POST",
-    body: JSON.stringify({ provider_id: providerId }),
+    headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+    body: JSON.stringify({ provider_id: providerId, data }),
   })
   const session = payment_collection.payment_sessions.find(
     (s) => s.provider_id === providerId
@@ -223,11 +238,37 @@ export async function createPaymentSession(
   return session
 }
 
-export const PAYMENT_PROVIDER_IDS = {
-  pix: "pp_pagarme-br_pix_br",
-  card: "pp_pagarme-br_card_br",
-  boleto: "pp_pagarme-br_boleto_br",
+const PAYMENT_PROVIDER_IDS_BY_GATEWAY = {
+  mercadopago: {
+    pix: "pp_mercadopago-br_pix_br",
+    card: "pp_mercadopago-br_card_br",
+    boleto: "pp_mercadopago-br_boleto_br",
+  },
+  pagarme: {
+    pix: "pp_pagarme-br_pix_br",
+    card: "pp_pagarme-br_card_br",
+    boleto: "pp_pagarme-br_boleto_br",
+  },
 } as const
+
+export async function fetchActivePaymentGateway(): Promise<"mercadopago" | "pagarme"> {
+  const { active_gateway } = await fetchJson<{ active_gateway: "mercadopago" | "pagarme" }>(
+    "/store/payment-gateway-status"
+  )
+  return active_gateway
+}
+
+export function getPaymentProviderIdForGateway(
+  gateway: "mercadopago" | "pagarme",
+  method: "pix" | "card" | "boleto"
+): string {
+  return PAYMENT_PROVIDER_IDS_BY_GATEWAY[gateway][method]
+}
+
+export async function getPaymentProviderId(method: "pix" | "card" | "boleto"): Promise<string> {
+  const gateway = await fetchActivePaymentGateway()
+  return getPaymentProviderIdForGateway(gateway, method)
+}
 
 /**
  * O saldo retornado por ensureGuestCustomer já reflete qualquer resgate

@@ -26,6 +26,9 @@ type SaleReceipt = {
 const brl = (cents: number) =>
   (cents / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })
 
+const paymentLabel = (method: string) =>
+  method === "pix" ? "Pix QR" : method === "card" ? "Cartão" : "Dinheiro"
+
 async function adminFetch<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(path, {
     ...init,
@@ -184,7 +187,7 @@ const PdvPage = () => {
             <span>TOTAL</span>
             <span>{brl(receipt.total)}</span>
           </div>
-          <p>Pagamento: {receipt.payment_method.toUpperCase()}</p>
+          <p>Pagamento: {paymentLabel(receipt.payment_method)}</p>
           {receipt.payment_method === "cash" && (
             <>
               <p>Recebido: {brl(receipt.cash_received || 0)}</p>
@@ -301,7 +304,7 @@ const PdvPage = () => {
                 fontWeight: paymentMethod === method ? 700 : 400,
               }}
             >
-              {method === "pix" ? "Pix QR" : method === "card" ? "Cartão" : "Dinheiro"}
+              {paymentLabel(method)}
             </button>
           ))}
         </div>

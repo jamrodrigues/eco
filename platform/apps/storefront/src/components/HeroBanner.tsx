@@ -4,7 +4,7 @@ const heroMain = manifest.banners.hero_main_1
 
 export default function HeroBanner() {
   return (
-    <section className="max-w-container mx-auto px-0 md:px-4 mt-0 md:mt-3">
+    <section className="w-full max-w-container mx-auto px-0 md:px-4 mt-0 md:mt-3">
       {/* Mobile: full-bleed single carousel */}
       <div
         className="md:hidden relative w-full aspect-[375/180] bg-gradient-to-br from-brand to-[#FF6633] bg-cover bg-center overflow-hidden"

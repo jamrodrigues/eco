@@ -142,7 +142,7 @@ const StoreCoinsPage = () => {
   if (permission === false) {
     return (
       <div style={{ padding: 24 }}>
-        <h1 style={{ fontSize: 20, fontWeight: 700, marginBottom: 8 }}>Moedas (Store Coins)</h1>
+        <h1 style={{ fontSize: 20, fontWeight: 700, marginBottom: 8 }}>Moedas</h1>
         <p style={{ color: "#dc2626" }}>Seu papel não tem permissão para acessar Moedas.</p>
       </div>
     )
@@ -150,7 +150,7 @@ const StoreCoinsPage = () => {
 
   return (
     <div style={{ padding: 24, maxWidth: 900 }}>
-      <h1 style={{ fontSize: 20, fontWeight: 700, marginBottom: 4 }}>Moedas (Store Coins)</h1>
+      <h1 style={{ fontSize: 20, fontWeight: 700, marginBottom: 4 }}>Moedas</h1>
       {readOnly && (
         <p style={{ color: "#b45309", fontSize: 13, marginBottom: 8 }}>
           Seu papel só tem acesso de leitura aqui — ajustes e configurações ficam bloqueados pelo
@@ -353,7 +353,7 @@ function buttonStyle(bg: string): React.CSSProperties {
 }
 
 export const config = defineRouteConfig({
-  label: "Moedas (Store Coins)",
+  label: "Moedas",
 })
 
 export default StoreCoinsPage

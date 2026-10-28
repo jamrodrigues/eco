@@ -30,6 +30,10 @@ type MaintenanceSettings = {
   message: string | null
 }
 
+type GatewaySettings = {
+  active_gateway: string
+}
+
 const CATEGORY_LABELS: Record<string, string> = {
   orders: "Pedidos",
   customers: "Clientes",
@@ -38,7 +42,7 @@ const CATEGORY_LABELS: Record<string, string> = {
   store_coins: "Moedas",
   pdv: "PDV",
   institutional_pages: "Páginas Institucionais",
-  settings: "Settings (loja/idioma/SEO)",
+  settings: "Configurações (loja/idioma/SEO)",
   maintenance_mode: "Modo Manutenção",
   user_management: "Gestão de Usuários",
 }
@@ -68,9 +72,11 @@ const AccessControlPage = () => {
   const [users, setUsers] = useState<AdminUser[]>([])
   const [maintenance, setMaintenance] = useState<MaintenanceSettings | null>(null)
   const [maintenanceMsg, setMaintenanceMsg] = useState("")
+  const [gateway, setGateway] = useState<GatewaySettings | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [savingMaintenance, setSavingMaintenance] = useState(false)
+  const [savingGateway, setSavingGateway] = useState(false)
 
   async function load() {
     setLoading(true)
@@ -97,6 +103,13 @@ const AccessControlPage = () => {
         )
         setMaintenance(settings)
         setMaintenanceMsg(settings.message || "")
+      }
+
+      if (meResult.permissions.payment_gateway === true) {
+        const { settings } = await adminFetch<{ settings: GatewaySettings }>(
+          "/admin/access-control/payment-gateway"
+        )
+        setGateway(settings)
       }
     } catch (err: any) {
       setError(err.message)
@@ -159,6 +172,22 @@ const AccessControlPage = () => {
       setError(err.message)
     } finally {
       setSavingMaintenance(false)
+    }
+  }
+
+  async function switchGateway(next: "mercadopago" | "pagarme") {
+    if (!gateway || gateway.active_gateway === next) return
+    setSavingGateway(true)
+    try {
+      const { settings } = await adminFetch<{ settings: GatewaySettings }>(
+        "/admin/access-control/payment-gateway",
+        { method: "PUT", body: JSON.stringify({ active_gateway: next }) }
+      )
+      setGateway(settings)
+    } catch (err: any) {
+      setError(err.message)
+    } finally {
+      setSavingGateway(false)
     }
   }
 
@@ -276,6 +305,50 @@ const AccessControlPage = () => {
             >
               Salvar mensagem
             </button>
+          </div>
+        </div>
+      )}
+
+      {me?.permissions.payment_gateway === true && (
+        <div style={{ marginBottom: 32 }}>
+          <h2 style={{ fontSize: 15, fontWeight: 700, marginBottom: 8 }}>Gateway de Pagamento</h2>
+          <p style={{ color: "#6b7280", fontSize: 13, marginBottom: 8 }}>
+            Define qual gateway de pagamento processa os pedidos da loja.
+          </p>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
+            <button
+              onClick={() => switchGateway("mercadopago")}
+              disabled={savingGateway}
+              style={{
+                background: gateway?.active_gateway === "mercadopago" ? "#16a34a" : "#dc2626",
+                color: "#fff",
+                border: "none",
+                borderRadius: 6,
+                padding: "8px 14px",
+                fontWeight: 600,
+                cursor: "pointer",
+              }}
+            >
+              Mercado Pago
+            </button>
+            <button
+              onClick={() => switchGateway("pagarme")}
+              disabled={savingGateway}
+              style={{
+                background: gateway?.active_gateway === "pagarme" ? "#16a34a" : "#dc2626",
+                color: "#fff",
+                border: "none",
+                borderRadius: 6,
+                padding: "8px 14px",
+                fontWeight: 600,
+                cursor: "pointer",
+              }}
+            >
+              Pagar.me
+            </button>
+            <span style={{ fontSize: 13 }}>
+              Gateway ativo: <strong>{gateway?.active_gateway}</strong>
+            </span>
           </div>
         </div>
       )}

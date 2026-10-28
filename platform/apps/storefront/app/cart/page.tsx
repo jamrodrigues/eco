@@ -143,7 +143,7 @@ export default function CartPage() {
     return (
       <>
         <Header />
-        <div className="max-w-container mx-auto px-4 py-10 text-textSecondary">Carregando...</div>
+        <div className="w-full max-w-container mx-auto px-4 py-10 text-textSecondary">Carregando...</div>
       </>
     )
   }
@@ -152,7 +152,7 @@ export default function CartPage() {
     return (
       <>
         <Header />
-        <div className="max-w-container mx-auto px-4 py-16 text-center">
+        <div className="w-full max-w-container mx-auto px-4 py-16 text-center">
           <p className="text-textSecondary">Seu carrinho está vazio.</p>
           <Link href="/" className="text-brand font-semibold mt-2 inline-block">
             Voltar às compras
@@ -171,7 +171,7 @@ export default function CartPage() {
   return (
     <>
       <Header />
-      <div className="max-w-container mx-auto px-4 py-6 pb-32">
+      <div className="w-full max-w-container mx-auto px-4 py-6 pb-32">
         <h1 className="text-lg font-semibold mb-4">Carrinho</h1>
 
         <div className="bg-surface border border-black/[.09] rounded overflow-hidden">
@@ -250,7 +250,11 @@ export default function CartPage() {
           <label className="flex items-center justify-between text-sm cursor-pointer">
             <span>
               Cupom de Frete Grátis{" "}
-              {useFreeShipping && <span className="text-freeShipping">Ativo ✓</span>}
+              {useFreeShipping && (
+                <span className="text-freeShipping inline-flex items-center gap-1">
+                  Ativo <MaterialIcon name="check" className="text-xs" />
+                </span>
+              )}
             </span>
             <input
               type="checkbox"

@@ -63,8 +63,8 @@ export default function SkuSelector({
                         borderColor: "transparent transparent #EE4D2D transparent",
                       }}
                     >
-                      <span className="absolute -bottom-[13px] -right-0 text-white text-[8px]">
-                        ✓
+                      <span className="absolute -bottom-[13px] -right-0 text-white">
+                        <span className="material-symbols-outlined text-[9px] leading-none">check</span>
                       </span>
                     </span>
                   )}

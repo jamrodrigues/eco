@@ -10,7 +10,7 @@ export default function FlashSaleSection({ products }: { products: MedusaProduct
   const items = products.slice(0, 6)
 
   return (
-    <section className="max-w-container mx-auto px-4 mt-4">
+    <section className="w-full max-w-container mx-auto px-4 mt-4">
       <div className="flex items-center gap-3 mb-2">
         <h2 className="text-brand font-bold text-lg flex items-center gap-1">
           <MaterialIcon name="bolt" /> Ofertas Relâmpago

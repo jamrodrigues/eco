@@ -32,5 +32,15 @@ export default defineMiddlewares({
       matcher: '/store/carts/:id/link-customer',
       middlewares: [authenticate('customer', ['bearer'])],
     },
+    {
+      method: ['GET'],
+      matcher: '/store/customers/me/coins',
+      middlewares: [authenticate('customer', ['bearer'])],
+    },
+    {
+      method: ['POST'],
+      matcher: '/store/customers/me/password',
+      middlewares: [authenticate('customer', ['bearer'])],
+    },
   ],
 })
