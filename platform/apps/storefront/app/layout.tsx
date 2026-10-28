@@ -26,6 +26,12 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="pt-BR" className="h-full" style={{ colorScheme: "light" }}>
+      <head>
+        <link
+          rel="stylesheet"
+          href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20,400,0,0"
+        />
+      </head>
       <body className="min-h-full flex flex-col bg-canvas text-textPrimary font-sans">
         <main className="viewport-sim-root flex-1 flex flex-col">{children}</main>
         <ViewportSimulatorToggle />

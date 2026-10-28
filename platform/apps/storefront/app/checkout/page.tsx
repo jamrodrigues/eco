@@ -723,8 +723,18 @@ export default function CheckoutPage() {
                     iframes de validade/CVV abaixo em posição fixa; sem essa
                     reserva, o texto condicional de bandeira detectada
                     empurra esses campos ao aparecer. */}
-                <p className="text-[11px] text-textSecondary h-[14px]">
-                  {paymentMethodId ? `Bandeira detectada: ${paymentMethodId}` : ""}
+                <p className="text-[11px] text-textSecondary h-[14px] flex items-center gap-1">
+                  {paymentMethodId && (
+                    <>
+                      <span
+                        className="material-symbols-outlined text-[13px] leading-none"
+                        style={{ fontVariationSettings: "'opsz' 20, 'wght' 400, 'FILL' 0, 'GRAD' 0" }}
+                      >
+                        credit_card
+                      </span>
+                      {`Bandeira detectada: ${paymentMethodId}`}
+                    </>
+                  )}
                 </p>
                 <div className="grid grid-cols-2 gap-2">
                   <div
