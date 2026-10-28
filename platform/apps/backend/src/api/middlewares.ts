@@ -37,5 +37,10 @@ export default defineMiddlewares({
       matcher: '/store/customers/me/coins',
       middlewares: [authenticate('customer', ['bearer'])],
     },
+    {
+      method: ['POST'],
+      matcher: '/store/customers/me/password',
+      middlewares: [authenticate('customer', ['bearer'])],
+    },
   ],
 })
