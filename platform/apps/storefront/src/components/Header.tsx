@@ -4,8 +4,6 @@ import { useEffect, useState } from "react"
 import Link from "next/link"
 import { brandConfig } from "@/config/brand.config"
 
-const popularKeywords = ["Vestido midi", "Fone bluetooth", "Smartwatch", "Kit skincare"]
-
 export default function Header() {
   const [scrolled, setScrolled] = useState(false)
 
@@ -20,9 +18,6 @@ export default function Header() {
       {/* Desktop: 119px (34px top bar + 85px main bar) */}
       <div className="hidden md:block bg-header-gradient text-white h-header">
         <div className="h-headerTopBar max-w-container mx-auto flex items-center justify-end gap-4 px-4 text-xs">
-          <Link href="/institucional/central-do-vendedor" className="opacity-90 hover:opacity-100">Central do Vendedor</Link>
-          <Link href="/notificacoes" className="opacity-90 hover:opacity-100">Notificações</Link>
-          <span className="opacity-70 cursor-default">Português</span>
           <Link href="/login" className="opacity-90 hover:opacity-100 font-semibold">Entrar</Link>
         </div>
         <div className="h-headerMainBar max-w-container mx-auto flex items-center gap-6 px-4">
@@ -39,11 +34,6 @@ export default function Header() {
               <button className="bg-brand px-5 py-2 text-white text-sm font-medium">
                 Buscar
               </button>
-            </div>
-            <div className="flex gap-3 mt-1 text-xs text-white/90">
-              {popularKeywords.map((kw) => (
-                <span key={kw} className="cursor-pointer hover:underline">{kw}</span>
-              ))}
             </div>
           </div>
           <Link href="/cart" className="relative shrink-0 text-2xl">🛒</Link>

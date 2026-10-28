@@ -4,7 +4,6 @@ const tabs = [
   { icon: "🏠", label: "Início", href: "/" },
   { icon: "🎬", label: "Vídeo", href: "/video" },
   { icon: "🔴", label: "Live", href: "/live" },
-  { icon: "🔔", label: "Notificações", href: "/notificacoes" },
   { icon: "👤", label: "Eu", href: "/conta" },
 ]
 
