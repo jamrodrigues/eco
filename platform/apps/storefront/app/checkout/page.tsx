@@ -719,11 +719,13 @@ export default function CheckoutPage() {
                   id="mp-card-number"
                   className="border border-black/[.09] rounded px-2 py-1.5 text-sm h-[38px]"
                 />
-                {paymentMethodId && (
-                  <p className="text-[11px] text-textSecondary">
-                    Bandeira detectada: {paymentMethodId}
-                  </p>
-                )}
+                {/* Altura sempre reservada (mesmo vazio) -- o SDK MP monta os
+                    iframes de validade/CVV abaixo em posição fixa; sem essa
+                    reserva, o texto condicional de bandeira detectada
+                    empurra esses campos ao aparecer. */}
+                <p className="text-[11px] text-textSecondary h-[14px]">
+                  {paymentMethodId ? `Bandeira detectada: ${paymentMethodId}` : ""}
+                </p>
                 <div className="grid grid-cols-2 gap-2">
                   <div
                     id="mp-card-expiry"
