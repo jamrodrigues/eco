@@ -20,8 +20,8 @@ export default function SellerCard({ sellerName }: { sellerName: string }) {
           <p className="text-xs text-freeShipping">● Online agora</p>
         </div>
         <div className="ml-auto flex gap-2">
-          <button className="px-3 py-1.5 text-xs border border-black/[.09] rounded hover:border-brand">
-            💬 Conversar Agora
+          <button className="px-3 py-1.5 text-xs border border-black/[.09] rounded hover:border-brand inline-flex items-center gap-1">
+            <span className="material-symbols-outlined text-[14px] leading-none">chat</span> Conversar Agora
           </button>
           <button className="px-3 py-1.5 text-xs border border-black/[.09] rounded hover:border-brand">
             Ver Página da Loja

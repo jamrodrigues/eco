@@ -35,7 +35,7 @@ export default function FlashSaleSection({ products }: { products: MedusaProduct
                   />
                 ) : (
                   <div className="w-full h-full flex flex-col items-center justify-center gap-1 text-textSecondary">
-                    <span className="text-2xl">📦</span>
+                    <span className="material-symbols-outlined text-2xl leading-none">inventory_2</span>
                     <span className="text-[10px]">Sem foto</span>
                   </div>
                 )}

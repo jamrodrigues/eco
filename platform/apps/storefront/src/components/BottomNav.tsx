@@ -1,10 +1,10 @@
 import Link from "next/link"
 
 const tabs = [
-  { icon: "🏠", label: "Início", href: "/" },
-  { icon: "🎬", label: "Vídeo", href: "/video" },
-  { icon: "🔴", label: "Live", href: "/live" },
-  { icon: "👤", label: "Eu", href: "/conta" },
+  { icon: "home", label: "Início", href: "/" },
+  { icon: "smart_display", label: "Vídeo", href: "/video" },
+  { icon: "sensors", label: "Live", href: "/live" },
+  { icon: "account_circle", label: "Eu", href: "/conta" },
 ]
 
 export default function BottomNav() {
@@ -16,7 +16,7 @@ export default function BottomNav() {
           href={tab.href}
           className="flex-1 flex flex-col items-center justify-center py-1.5 text-[11px] text-textSecondary"
         >
-          <span className="text-lg leading-none">{tab.icon}</span>
+          <span className="material-symbols-outlined text-[22px] leading-none">{tab.icon}</span>
           <span>{tab.label}</span>
         </Link>
       ))}

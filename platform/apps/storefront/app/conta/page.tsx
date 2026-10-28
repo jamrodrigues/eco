@@ -275,7 +275,7 @@ export default function ContaPage() {
       <>
         <Header />
         <section className="w-full max-w-container mx-auto px-4 py-16 mb-20 md:mb-10 min-h-[50vh] flex flex-col items-center justify-center text-center">
-          <span className="text-5xl mb-4">👤</span>
+          <span className="material-symbols-outlined text-5xl leading-none mb-4">account_circle</span>
           <h1 className="text-xl font-bold text-textPrimary mb-2">Você ainda não entrou</h1>
           <p className="text-textSecondary text-sm mb-4">
             Entre na sua conta para ver pedidos, moedas e endereços salvos.
@@ -699,7 +699,7 @@ export default function ContaPage() {
               <div>
                 <h2 className="font-semibold text-base mb-3">Moedas</h2>
                 <div className="bg-canvas border border-black/[.09] rounded p-4 mb-4 flex items-center gap-3 max-w-md">
-                  <span className="text-3xl">🪙</span>
+                  <span className="material-symbols-outlined text-3xl leading-none">monetization_on</span>
                   <div>
                     <p className="text-xl font-bold text-textPrimary">{coins.coins_balance}</p>
                     <p className="text-textSecondary text-xs">moedas disponíveis</p>

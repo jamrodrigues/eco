@@ -135,11 +135,11 @@ const shippingMethodOptions: {
 
 type PaymentMethod = "pix" | "card" | "boleto" | "wallet"
 
-const paymentOptions: { id: PaymentMethod; label: string; enabled: boolean }[] = [
-  { id: "pix", label: "⚡ PIX (10% OFF EXTRA)", enabled: true },
-  { id: "card", label: "💳 Cartão de Crédito (Até 3x sem juros)", enabled: true },
-  { id: "boleto", label: "📄 Boleto Bancário", enabled: true },
-  { id: "wallet", label: "👛 Carteira Digital", enabled: false },
+const paymentOptions: { id: PaymentMethod; icon: string; label: string; enabled: boolean }[] = [
+  { id: "pix", icon: "bolt", label: "PIX (10% OFF EXTRA)", enabled: true },
+  { id: "card", icon: "credit_card", label: "Cartão de Crédito (Até 3x sem juros)", enabled: true },
+  { id: "boleto", icon: "description", label: "Boleto Bancário", enabled: true },
+  { id: "wallet", icon: "account_balance_wallet", label: "Carteira Digital", enabled: false },
 ]
 
 export default function CheckoutPage() {
@@ -698,7 +698,10 @@ export default function CheckoutPage() {
                       : "border-black/[.09]"
                   } ${!opt.enabled ? "opacity-40 cursor-not-allowed" : ""}`}
                 >
-                  {opt.label}
+                  <span className="inline-flex items-center gap-1.5">
+                    <span className="material-symbols-outlined text-[16px] leading-none">{opt.icon}</span>
+                    {opt.label}
+                  </span>
                   {!opt.enabled && " — indisponível nesta fase"}
                 </button>
               ))}

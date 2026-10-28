@@ -1,11 +1,11 @@
 import { brandConfig } from "@/config/brand.config"
 
 const items = [
-  { icon: "🪙", label: brandConfig.coinsLabel },
-  { icon: "🎟️", label: "Cupons" },
-  { icon: "🚚", label: "Frete Grátis" },
-  { icon: "⚡", label: "Ofertas Relâmpago" },
-  { icon: "✅", label: "Lojas Oficiais" },
+  { icon: "monetization_on", label: brandConfig.coinsLabel },
+  { icon: "confirmation_number", label: "Cupons" },
+  { icon: "local_shipping", label: "Frete Grátis" },
+  { icon: "bolt", label: "Ofertas Relâmpago" },
+  { icon: "verified", label: "Lojas Oficiais" },
 ]
 
 export default function ServiceShortcuts() {
@@ -17,8 +17,8 @@ export default function ServiceShortcuts() {
             key={item.label}
             className="flex flex-col items-center gap-1 shrink-0 w-20 cursor-pointer"
           >
-            <div className="w-10 h-10 rounded-full bg-surface border border-black/[.09] flex items-center justify-center text-xl">
-              {item.icon}
+            <div className="w-10 h-10 rounded-full bg-surface border border-black/[.09] flex items-center justify-center">
+              <span className="material-symbols-outlined text-[20px] leading-none">{item.icon}</span>
             </div>
             <span className="text-[11px] text-textSecondary text-center leading-tight">
               {item.label}

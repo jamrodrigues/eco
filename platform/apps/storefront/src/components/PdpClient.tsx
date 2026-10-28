@@ -182,15 +182,15 @@ export default function PdpClient({ product }: { product: ProductDetail }) {
       <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-surface border-t border-black/[.09] px-3 py-2 flex items-center gap-2">
         <a
           href="/chat"
-          className="w-11 h-11 flex items-center justify-center rounded-full bg-freeShipping/10 text-freeShipping text-lg"
+          className="w-11 h-11 flex items-center justify-center rounded-full bg-freeShipping/10 text-freeShipping"
         >
-          💬
+          <span className="material-symbols-outlined text-[22px] leading-none">chat</span>
         </a>
         <a
           href="/cart"
-          className="w-11 h-11 flex items-center justify-center rounded-full bg-canvas text-lg"
+          className="w-11 h-11 flex items-center justify-center rounded-full bg-canvas"
         >
-          🛒
+          <span className="material-symbols-outlined text-[22px] leading-none">shopping_cart</span>
         </a>
         <button
           type="button"

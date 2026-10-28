@@ -180,7 +180,9 @@ export default function CartPage() {
               OFICIAL
             </span>
             <span className="font-semibold">{SELLER_NAME}</span>
-            <span className="text-textSecondary">| 💬 Conversar</span>
+            <span className="text-textSecondary inline-flex items-center gap-1">
+              | <span className="material-symbols-outlined text-[14px] leading-none">chat</span> Conversar
+            </span>
             {pricing && pricing.store_coupon_discount > 0 && (
               <span className="ml-auto text-brand text-xs">
                 Cupom da Loja Aplicado: {formatBRL(pricing.store_coupon_discount)} OFF
@@ -242,7 +244,11 @@ export default function CartPage() {
           <label className="flex items-center justify-between text-sm cursor-pointer">
             <span>
               Cupom de Frete Grátis{" "}
-              {useFreeShipping && <span className="text-freeShipping">Ativo ✓</span>}
+              {useFreeShipping && (
+                <span className="text-freeShipping inline-flex items-center gap-1">
+                  Ativo <span className="material-symbols-outlined text-[14px] leading-none">check</span>
+                </span>
+              )}
             </span>
             <input
               type="checkbox"

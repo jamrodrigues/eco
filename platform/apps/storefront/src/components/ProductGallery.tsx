@@ -73,12 +73,12 @@ export default function ProductGallery({
           href={`https://wa.me/?text=${encodeURIComponent(title)}`}
           target="_blank"
           rel="noreferrer"
-          className="hover:text-brand"
+          className="hover:text-brand inline-flex items-center gap-1"
         >
-          📤 Compartilhar
+          <span className="material-symbols-outlined text-[16px] leading-none">share</span> Compartilhar
         </a>
-        <button type="button" className="hover:text-brand">
-          ♡ Favoritar (3.421)
+        <button type="button" className="hover:text-brand inline-flex items-center gap-1">
+          <span className="material-symbols-outlined text-[16px] leading-none">favorite</span> Favoritar
         </button>
       </div>
     </div>
