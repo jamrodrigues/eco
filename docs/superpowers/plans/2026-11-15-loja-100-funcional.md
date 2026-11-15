@@ -19,7 +19,7 @@
 - Toda rota `/admin/<x>` nova entra em `PREFIX_MAP` de `backend/src/modules/access-control/permissions.ts` com uma `PermissionCategory`.
 - Toda rota `/store/*` nova que exige cliente logado entra em `backend/src/api/middlewares.ts` com `authenticate('customer', ['bearer'])`.
 - Banner usa `image_url` (texto); sem upload nesta fase.
-- Push em `brand/vruumoto` = deploy no demo. Depois de cada PR com backend, confirmar no demo com `curl` (backend demora ~7 min pra subir).
+- Push em `brand/vruumoto` **não** faz deploy: o deploy do demo é disparado manualmente no painel Coolify (`vruum-storefront` / `vruum-backend` → Deploy) pelo dono ou pelo coordenador. O agente implementador **para no push** e avisa que precisa de deploy; só depois do deploy confirmar no demo com `curl` (backend demora ~7 min pra subir).
 - Verificação padrão storefront: `cd platform/apps/storefront && npx tsc --noEmit && npm run lint` (lint tem 3 erros pré-existentes não relacionados — só não pode aumentar).
 - Verificação padrão backend: `cd platform/apps/backend && npm run test:unit && npm run build`.
 
@@ -140,7 +140,7 @@
 - [ ] **Step 5: Verificar** — `npx tsc --noEmit && npm run lint`; `npm run build && npm run start` (prompt só existe em build de produção): no Chrome desktop, o botão aparece após alguns segundos na home (Chrome exige engajamento) e o QR renderiza; no DevTools → Application → Manifest sem erros.
 - [ ] **Step 6: Commit** — `feat(storefront): botao instalar app (PWA) e QR real do site no lugar do placeholder`
 
-**Fechar PR 1:** push `brand/vruumoto` (ou branch + PR, conforme o fluxo do dono), esperar deploy do storefront e conferir `https://vruumoto.com.br/busca?q=kit` e a home no celular.
+**Fechar PR 1:** push `brand/vruumoto` (ou branch + PR, conforme o fluxo do dono) e **pedir o deploy manual** de `vruum-storefront` no Coolify; depois conferir `https://vruumoto.com.br/busca?q=kit` e a home no celular.
 
 ---
 

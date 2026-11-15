@@ -34,10 +34,12 @@ que vira real, o que é removido e o que fica atrás de flag.
 - Git nesse disco (NTFS montado como root) exige `git -c safe.directory='*' <cmd>`.
 - Commits no padrão existente: `feat(storefront): ...`, `feat(backend): ...`,
   `fix(...)`, `chore(...)`, mensagem em pt-BR sem acento obrigatório.
-- Push em `brand/vruumoto` faz deploy automático no Coolify (ambiente demo
-  `vruumoto.com.br` / `api.vruumoto.com.br`, confirmado como DEMO/DEV, não produção).
-  Migrations rodam sozinhas no start do backend (`npx medusa db:migrate` no script
-  `start`).
+- Push em `brand/vruumoto` **não** faz deploy sozinho: não há webhook configurado no
+  Coolify. O deploy do demo (`vruumoto.com.br` / `api.vruumoto.com.br`, confirmado
+  como DEMO/DEV, não produção) é disparado **manualmente** pelo dono no painel
+  Coolify (recurso `vruum-storefront` e/ou `vruum-backend` → "Deploy"), ou pelo
+  coordenador com autorização explícita. Migrations rodam sozinhas no start do
+  backend (`npx medusa db:migrate` no script `start`).
 - Novas rotas `/admin/*` precisam de categoria de permissão no módulo
   `access-control` (`permissions.ts`), senão o `accessControlGuard` deixa passar sem
   controle de papel.
