@@ -5,7 +5,6 @@ import Link from "next/link"
 import { useSearchParams, useRouter } from "next/navigation"
 import { brandConfig } from "@/config/brand.config"
 import SliderCaptcha from "@/components/SliderCaptcha"
-import QrLoginCanvas from "@/components/QrLoginCanvas"
 import { loginCustomer, registerCustomer } from "@/lib/auth"
 
 export default function LoginPage() {
@@ -17,7 +16,7 @@ export default function LoginPage() {
 }
 
 function LoginForm() {
-  const [mode, setMode] = useState<"password" | "qrcode" | "register">("password")
+  const [mode, setMode] = useState<"password" | "register">("password")
   const [identifier, setIdentifier] = useState("")
   const [password, setPassword] = useState("")
   const [captchaOk, setCaptchaOk] = useState(false)
@@ -103,14 +102,6 @@ function LoginForm() {
               }`}
             >
               Entrar com senha
-            </button>
-            <button
-              onClick={() => setMode("qrcode")}
-              className={`flex-1 pb-2 text-sm font-semibold ${
-                mode === "qrcode" ? "text-brand border-b-2 border-brand" : "text-textSecondary"
-              }`}
-            >
-              QR Code
             </button>
             <button
               onClick={() => setMode("register")}
@@ -203,7 +194,7 @@ function LoginForm() {
                 {submitting ? "Criando conta..." : "Criar Conta"}
               </button>
             </form>
-          ) : mode === "password" ? (
+          ) : (
             <form onSubmit={handleSubmit} className="space-y-3">
               <input
                 type="text"
@@ -237,26 +228,7 @@ function LoginForm() {
                 Esqueci minha senha
               </Link>
             </form>
-          ) : (
-            <div className="flex flex-col items-center gap-3 py-2">
-              <QrLoginCanvas seed={next} />
-              <p className="text-xs text-textSecondary text-center">
-                Abra o app e escaneie o código para entrar
-              </p>
-            </div>
           )}
-
-          <div className="mt-5 pt-4 border-t border-black/[.09] flex flex-col gap-2">
-            <button className="border border-black/[.15] rounded py-2 text-sm">
-              Continuar com Google
-            </button>
-            <button className="border border-black/[.15] rounded py-2 text-sm">
-              Continuar com Facebook
-            </button>
-            <button className="border border-black/[.15] rounded py-2 text-sm">
-              Continuar com Apple
-            </button>
-          </div>
         </div>
       </div>
     </div>
