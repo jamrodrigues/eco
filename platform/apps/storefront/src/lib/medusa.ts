@@ -15,7 +15,11 @@ export type MedusaProduct = {
     title: string
     sku: string | null
     inventory_quantity?: number
-    calculated_price?: { calculated_amount: number; currency_code: string }
+    calculated_price?: {
+      calculated_amount: number
+      currency_code: string
+      original_amount?: number
+    }
   }[]
 }
 
@@ -55,6 +59,7 @@ export type ProductDetail = {
   thumbnail: string | null
   images: { url: string }[]
   options: ProductOption[]
+  metadata?: { sold_count?: number; review_count?: number; review_avg?: number } | null
   variants: ProductVariantDetail[]
 }
 
@@ -137,6 +142,7 @@ const PRODUCT_DETAIL_FIELDS = [
   "handle",
   "description",
   "thumbnail",
+  "metadata",
   "images.url",
   "options.id",
   "options.title",
@@ -225,13 +231,6 @@ export async function getProductByHandle(handle: string) {
   }
 
   return product
-}
-
-/** Hash determinístico simples — evita Math.random() no render (mismatch de hidratação). */
-export function deterministicInRange(seed: string, min: number, max: number) {
-  let hash = 0
-  for (let i = 0; i < seed.length; i++) hash = (hash * 31 + seed.charCodeAt(i)) >>> 0
-  return min + (hash % (max - min + 1))
 }
 
 export function formatBRL(cents: number) {

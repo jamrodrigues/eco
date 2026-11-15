@@ -7,6 +7,7 @@ import type { ProductDetail } from "@/lib/medusa"
 import { findVariantBySelection, formatBRL, variantOptionMap } from "@/lib/medusa"
 import { getOrCreateCart, addLineItem } from "@/lib/cart"
 import { brandConfig } from "@/config/brand.config"
+import { formatRatingLabel, formatSoldLabel } from "@/lib/social-proof"
 import {
   isMotorcycleCompatible,
   loadSelectedMotorcycle,
@@ -17,7 +18,6 @@ import SkuSelector from "./SkuSelector"
 import CepCalculator from "./CepCalculator"
 import Toast from "./Toast"
 import BottomSheetDrawer from "./BottomSheetDrawer"
-import SellerCard from "./SellerCard"
 import SpecsTable from "./SpecsTable"
 import ReviewsBlock from "./ReviewsBlock"
 import MotorcycleFitmentBar from "./MotorcycleFitmentBar"
@@ -27,8 +27,6 @@ import manifest from "../../public/assets/manifest.json"
 const manifestImageByHandle: Record<string, { src: string; alt: string }> = {
   "kit-relacao-transmissao-aco-1045-vruumoto-original": manifest.products.kit_relacao_freio,
 }
-
-const SELLER_NAME = "Vruumoto Oficial"
 
 export default function PdpClient({ product }: { product: ProductDetail }) {
   const router = useRouter()
@@ -71,6 +69,13 @@ export default function PdpClient({ product }: { product: ProductDetail }) {
   })
 
   const stock = selectedVariant?.inventory_quantity ?? 0
+
+  const socialLine = [
+    formatRatingLabel(product.metadata?.review_avg, product.metadata?.review_count),
+    formatSoldLabel(product.metadata?.sold_count),
+  ]
+    .filter(Boolean)
+    .join(" | ")
 
   function handleSelect(optionTitle: string, value: string) {
     const next = { ...selection, [optionTitle]: value }
@@ -116,15 +121,15 @@ export default function PdpClient({ product }: { product: ProductDetail }) {
         <ProductGallery images={images} title={product.title} />
 
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 mb-1">
-            <span className="bg-badgeOfficial text-white text-[10px] font-bold px-1.5 py-0.5 rounded">
-              OFICIAL
-            </span>
-          </div>
+          {brandConfig.features.showOfficialBadge && (
+            <div className="flex items-center gap-2 mb-1">
+              <span className="bg-badgeOfficial text-white text-[10px] font-bold px-1.5 py-0.5 rounded">
+                {brandConfig.officialBadgeLabel}
+              </span>
+            </div>
+          )}
           <h1 className="text-lg font-semibold text-textPrimary">{product.title}</h1>
-          <p className="text-sm text-textSecondary mt-1">
-            4.8 ★★★★★ | 2,3 mil avaliações | 8,4 mil vendidos
-          </p>
+          {socialLine && <p className="text-sm text-textSecondary mt-1">{socialLine}</p>}
 
           <div className="bg-[#FAFAFA] p-4 rounded mt-3">
             <div className="flex items-baseline gap-2">
@@ -228,7 +233,6 @@ export default function PdpClient({ product }: { product: ProductDetail }) {
       </div>
 
       <div className="mt-8 space-y-4">
-        <SellerCard sellerName={SELLER_NAME} />
         <SpecsTable description={product.description} />
         <ReviewsBlock />
       </div>

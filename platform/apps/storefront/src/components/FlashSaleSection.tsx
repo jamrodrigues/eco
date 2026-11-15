@@ -1,7 +1,7 @@
 import Link from "next/link"
 import type { MedusaProduct } from "@/lib/medusa"
 import FlashSaleCountdown from "./FlashSaleCountdown"
-import { deterministicInRange, formatBRL } from "@/lib/medusa"
+import { formatBRL } from "@/lib/medusa"
 import MaterialIcon from "./MaterialIcon"
 
 const SALE_DURATION_MS = 2 * 60 * 60 * 1000 // 2h de simulação
@@ -20,7 +20,6 @@ export default function FlashSaleSection({ products }: { products: MedusaProduct
       <div className="flex gap-2.5 overflow-x-auto snap-x">
         {items.map((product) => {
           const price = product.variants?.[0]?.calculated_price?.calculated_amount ?? 0
-          const sold = deterministicInRange(product.id, 60, 99)
           return (
             <Link
               key={product.id}
@@ -45,15 +44,6 @@ export default function FlashSaleSection({ products }: { products: MedusaProduct
               </div>
               <div className="p-2">
                 <p className="text-brand font-extrabold text-sm">{formatBRL(price)}</p>
-                <div className="mt-1 h-2 rounded-full bg-brand/15 relative overflow-hidden">
-                  <div
-                    className="h-full bg-brand rounded-full"
-                    style={{ width: `${sold}%` }}
-                  />
-                </div>
-                <p className="text-[10px] text-textSecondary mt-0.5 flex items-center gap-0.5">
-                  <MaterialIcon name="local_fire_department" className="text-xs" /> {sold}% VENDIDOS
-                </p>
               </div>
             </Link>
           )

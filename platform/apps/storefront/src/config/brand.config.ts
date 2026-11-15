@@ -16,6 +16,7 @@ export interface BrandConfig {
     enableOemPartNumberSearch: boolean
     enableHyperlocalCityBadge: boolean
     enablePwaInstallPrompt: boolean
+    showOfficialBadge: boolean
   }
   /** Opcional — quando ausente, o Header mostra o storeName em texto. */
   logoImagePath?: string
@@ -56,6 +57,7 @@ export const brandConfig: BrandConfig = {
     enableOemPartNumberSearch: true,
     enableHyperlocalCityBadge: true,
     enablePwaInstallPrompt: true,
+    showOfficialBadge: false,
   },
   logoImagePath: "/icons/vruumoto-wordmark-white.png",
   serviceShortcuts: [
