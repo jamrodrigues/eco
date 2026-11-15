@@ -12,6 +12,8 @@ export type PermissionCategory =
   | "maintenance_mode"
   | "payment_gateway"
   | "user_management"
+  | "product_reviews"
+  | "banners"
 
 export type RoleSlug = "super_admin" | "gerente" | "operador_pdv" | "atendimento_marketing"
 
@@ -29,6 +31,8 @@ const ALL_TRUE: PermissionMap = {
   maintenance_mode: true,
   payment_gateway: true,
   user_management: true,
+  product_reviews: true,
+  banners: true,
 }
 
 /**
@@ -69,6 +73,8 @@ export const ROLE_DEFINITIONS: { slug: RoleSlug; name: string; permissions: Perm
       maintenance_mode: false,
       payment_gateway: false,
       user_management: false,
+      product_reviews: false,
+      banners: false,
     },
   },
   {
@@ -86,6 +92,8 @@ export const ROLE_DEFINITIONS: { slug: RoleSlug; name: string; permissions: Perm
       maintenance_mode: false,
       payment_gateway: false,
       user_management: false,
+      product_reviews: true,
+      banners: true,
     },
   },
 ]
@@ -132,6 +140,8 @@ const PREFIX_MAP: [string, PermissionCategory][] = [
   ["/admin/invites", "user_management"],
   ["/admin/access-control/users", "user_management"],
   ["/admin/access-control/roles", "user_management"],
+  ["/admin/product-reviews", "product_reviews"],
+  ["/admin/banners", "banners"],
 ]
 
 // Rotas que nunca devem ser bloqueadas, mesmo batendo em um prefixo
@@ -153,6 +163,20 @@ export function isAllowed(
   if (value === true) return true
   if (value === "read_only") return method === "GET"
   return false
+}
+
+/**
+ * Mescla as permissões salvas no banco com os defaults do papel. Chave
+ * ausente no `stored` (ex.: categoria criada depois que o papel foi salvo)
+ * cai no default de ROLE_DEFINITIONS; chave presente sempre vence.
+ */
+export function mergeWithRoleDefaults(
+  slug: string,
+  stored: Partial<PermissionMap> | null | undefined
+): PermissionMap {
+  const def =
+    ROLE_DEFINITIONS.find((d) => d.slug === slug) ?? ROLE_DEFINITIONS[0]
+  return { ...def.permissions, ...(stored ?? {}) } as PermissionMap
 }
 
 export async function getRoleAndPermissionsForUser(
@@ -179,6 +203,6 @@ export async function getRoleAndPermissionsForUser(
   return {
     role_slug: role.slug,
     role_name: role.name,
-    permissions: role.permissions as PermissionMap,
+    permissions: mergeWithRoleDefaults(role.slug, role.permissions),
   }
 }
