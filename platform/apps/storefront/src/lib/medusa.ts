@@ -9,10 +9,12 @@ export type MedusaProduct = {
   title: string
   handle: string
   thumbnail: string | null
+  metadata?: { sold_count?: number; review_count?: number; review_avg?: number } | null
   variants: {
     id: string
     title: string
     sku: string | null
+    inventory_quantity?: number
     calculated_price?: { calculated_amount: number; currency_code: string }
   }[]
 }
@@ -75,7 +77,13 @@ export async function medusaFetch<T>(path: string, init?: RequestInit): Promise<
   return response.json()
 }
 
-export async function listProducts(opts: { limit?: number; offset?: number } = {}) {
+export async function listProducts(opts: {
+  limit?: number
+  offset?: number
+  q?: string
+  categoryId?: string
+  ids?: string[]
+} = {}) {
   const limit = opts.limit ?? 24
   const offset = opts.offset ?? 0
   const regionId = process.env.NEXT_PUBLIC_REGION_ID
@@ -84,12 +92,23 @@ export async function listProducts(opts: { limit?: number; offset?: number } = {
     offset: String(offset),
     region_id: regionId || "",
     fields:
-      "id,title,handle,thumbnail,*variants,variants.calculated_price",
+      "id,title,handle,thumbnail,metadata,*variants,variants.calculated_price,variants.inventory_quantity",
   })
+  if (opts.q) params.append("q", opts.q)
+  if (opts.categoryId) params.append("category_id[]", opts.categoryId)
+  opts.ids?.forEach((id) => params.append("id[]", id))
 
   return medusaFetch<{ products: MedusaProduct[]; count: number }>(
     `/store/products?${params.toString()}`
   )
+}
+
+export async function getCategoryByHandle(handle: string) {
+  const params = new URLSearchParams({ handle, fields: "id,name,handle" })
+  const data = await medusaFetch<{
+    product_categories: { id: string; name: string; handle: string }[]
+  }>(`/store/product-categories?${params.toString()}`)
+  return data.product_categories[0] ?? null
 }
 
 export async function getShippingByCep(cep: string) {

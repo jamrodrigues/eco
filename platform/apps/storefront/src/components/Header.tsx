@@ -1,11 +1,64 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { Suspense, useEffect, useState } from "react"
 import Link from "next/link"
+import { useSearchParams } from "next/navigation"
 import { brandConfig } from "@/config/brand.config"
 import { getCurrentCustomer, getSessionToken, logoutCustomer } from "@/lib/auth"
 import { getCartIfExists, onCartUpdated } from "@/lib/cart"
 import MaterialIcon from "./MaterialIcon"
+
+function SearchField({
+  initialQuery,
+  variant,
+}: {
+  initialQuery: string
+  variant: "desktop" | "mobile"
+}) {
+  if (variant === "desktop") {
+    return (
+      <form action="/busca" method="get" role="search" className="flex bg-white rounded-sm overflow-hidden">
+        <input
+          key={initialQuery}
+          name="q"
+          type="search"
+          defaultValue={initialQuery}
+          placeholder="Buscar produtos, marcas e muito mais"
+          className="flex-1 px-4 py-2 text-textPrimary text-sm outline-none"
+        />
+        <button type="submit" className="bg-brand px-5 text-white flex items-center justify-center shrink-0" aria-label="Buscar">
+          <MaterialIcon name="search" className="text-xl" />
+        </button>
+      </form>
+    )
+  }
+  return (
+    <form action="/busca" method="get" role="search" className="flex-1 flex items-center rounded-full px-3 py-1.5 bg-white/95">
+      <MaterialIcon name="search" className="text-base mr-2 text-textSecondary" />
+      <input
+        key={initialQuery}
+        name="q"
+        type="search"
+        defaultValue={initialQuery}
+        placeholder={`Buscar na ${brandConfig.storeName}`}
+        className="flex-1 bg-transparent text-sm outline-none text-textPrimary"
+      />
+    </form>
+  )
+}
+
+function SearchFieldFromParams({ variant }: { variant: "desktop" | "mobile" }) {
+  const initialQuery = useSearchParams().get("q") ?? ""
+  return <SearchField initialQuery={initialQuery} variant={variant} />
+}
+
+function HeaderSearch({ variant }: { variant: "desktop" | "mobile" }) {
+  return (
+    <Suspense fallback={<SearchField initialQuery="" variant={variant} />}>
+      <SearchFieldFromParams variant={variant} />
+    </Suspense>
+  )
+}
 
 export default function Header() {
   const [scrolled, setScrolled] = useState(false)
@@ -98,16 +151,7 @@ export default function Header() {
             )}
           </Link>
           <div className="flex-1 max-w-[840px]">
-            <div className="flex bg-white rounded-sm overflow-hidden">
-              <input
-                type="text"
-                placeholder="Buscar produtos, marcas e muito mais"
-                className="flex-1 px-4 py-2 text-textPrimary text-sm outline-none"
-              />
-              <button className="bg-brand px-5 text-white flex items-center justify-center shrink-0" aria-label="Buscar">
-                <MaterialIcon name="search" className="text-xl" />
-              </button>
-            </div>
+            <HeaderSearch variant="desktop" />
           </div>
           <Link href="/cart" className="relative shrink-0">
             <MaterialIcon name="shopping_cart" className="text-2xl" />
@@ -129,14 +173,7 @@ export default function Header() {
         <Link href="/" className="shrink-0" aria-label={`Ir para a página inicial da ${brandConfig.storeName}`}>
           <MaterialIcon name="home" className="text-xl" />
         </Link>
-        <div className="flex-1 flex items-center rounded-full px-3 py-1.5 bg-white/95">
-          <MaterialIcon name="search" className="text-base mr-2 text-textSecondary" />
-          <input
-            type="text"
-            placeholder={`Buscar na ${brandConfig.storeName}`}
-            className="flex-1 bg-transparent text-sm outline-none text-textPrimary"
-          />
-        </div>
+        <HeaderSearch variant="mobile" />
         <Link href="/cart" className="relative">
           <MaterialIcon name="shopping_cart" className="text-xl" />
           {cartCount > 0 && (

@@ -19,9 +19,11 @@ function SkeletonCard() {
   )
 }
 
-export default function ProductGrid({ initialProducts, initialCount }: {
+export default function ProductGrid({ initialProducts, initialCount, query, categoryId }: {
   initialProducts: MedusaProduct[]
   initialCount: number
+  query?: string
+  categoryId?: string
 }) {
   const [products, setProducts] = useState(initialProducts)
   const [offset, setOffset] = useState(initialProducts.length)
@@ -35,14 +37,14 @@ export default function ProductGrid({ initialProducts, initialCount }: {
     if (loading || offset >= count) return
     setLoading(true)
     try {
-      const { products: next } = await listProducts({ limit: PAGE_SIZE, offset })
+      const { products: next } = await listProducts({ limit: PAGE_SIZE, offset, q: query, categoryId })
       setProducts((prev) => [...prev, ...next])
       setOffset((prev) => prev + next.length)
       setBatches((prev) => prev + 1)
     } finally {
       setLoading(false)
     }
-  }, [loading, offset, count])
+  }, [loading, offset, count, query, categoryId])
 
   useEffect(() => {
     if (showMoreButton) return
