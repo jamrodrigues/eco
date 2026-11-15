@@ -1,12 +1,13 @@
+import Link from "next/link"
 import { brandConfig } from "@/config/brand.config"
 import MaterialIcon from "./MaterialIcon"
 
 const defaultItems = [
-  { icon: "monetization_on", label: brandConfig.coinsLabel },
-  { icon: "confirmation_number", label: "Cupons" },
-  { icon: "local_shipping", label: "Frete Grátis" },
-  { icon: "bolt", label: "Ofertas Relâmpago" },
-  { icon: "verified", label: "Lojas Oficiais" },
+  { icon: "monetization_on", label: brandConfig.coinsLabel, href: "/conta?tab=moedas" },
+  { icon: "confirmation_number", label: "Cupons", href: "/institucional/pagamento" },
+  { icon: "local_shipping", label: "Frete Grátis", href: "/institucional/entrega" },
+  { icon: "bolt", label: "Ofertas Relâmpago", href: "/#ofertas" },
+  { icon: "verified", label: "Lojas Oficiais", href: "/busca" },
 ]
 
 export default function ServiceShortcuts() {
@@ -23,9 +24,10 @@ export default function ServiceShortcuts() {
         }}
       >
         {items.map((item) => (
-          <div
+          <Link
             key={item.label}
-            className="flex flex-col items-center gap-1 w-20 cursor-pointer"
+            href={item.href}
+            className="flex flex-col items-center gap-1 w-20"
           >
             <div className="w-10 h-10 rounded-full bg-surface border border-black/[.09] flex items-center justify-center">
               <MaterialIcon name={item.icon} className="text-xl text-brand" />
@@ -33,7 +35,7 @@ export default function ServiceShortcuts() {
             <span className="text-[11px] text-textSecondary text-center leading-tight">
               {item.label}
             </span>
-          </div>
+          </Link>
         ))}
       </div>
     </section>

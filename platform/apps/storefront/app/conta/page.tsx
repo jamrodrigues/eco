@@ -1,7 +1,8 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { Suspense, useEffect, useState } from "react"
 import Link from "next/link"
+import { useSearchParams } from "next/navigation"
 import Header from "@/components/Header"
 import BottomNav from "@/components/BottomNav"
 import MaterialIcon from "@/components/MaterialIcon"
@@ -97,11 +98,24 @@ const NAV: { key: Tab; label: string; group: "conta" | "compras" | "moedas" }[] 
   { key: "moedas", label: "Moedas", group: "moedas" },
 ]
 
+const TAB_KEYS: Tab[] = ["perfil", "enderecos", "senha", "pedidos", "moedas"]
+
 export default function ContaPage() {
+  return (
+    <Suspense fallback={null}>
+      <ContaContent />
+    </Suspense>
+  )
+}
+
+function ContaContent() {
+  const initialTab = useSearchParams().get("tab")
   const [loading, setLoading] = useState(true)
   const [customer, setCustomer] = useState<CurrentCustomer | null>(null)
   const [token, setToken] = useState<string | null>(null)
-  const [tab, setTab] = useState<Tab>("pedidos")
+  const [tab, setTab] = useState<Tab>(
+    initialTab && (TAB_KEYS as string[]).includes(initialTab) ? (initialTab as Tab) : "pedidos"
+  )
   const [error, setError] = useState<string | null>(null)
 
   const [orders, setOrders] = useState<MyOrder[]>([])

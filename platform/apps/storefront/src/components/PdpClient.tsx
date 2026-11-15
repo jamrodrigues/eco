@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useMemo, useState } from "react"
+import Link from "next/link"
 import { useRouter } from "next/navigation"
 import type { ProductDetail } from "@/lib/medusa"
 import { findVariantBySelection, formatBRL, variantOptionMap } from "@/lib/medusa"
@@ -234,12 +235,12 @@ export default function PdpClient({ product }: { product: ProductDetail }) {
 
       {/* Mobile fixed action bar */}
       <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-surface border-t border-black/[.09] px-3 py-2 flex items-center gap-2">
-        <a
-          href="/chat"
+        <Link
+          href="/institucional/central-de-ajuda"
           className="w-11 h-11 flex items-center justify-center rounded-full bg-freeShipping/10 text-freeShipping"
         >
-          <MaterialIcon name="chat_bubble" className="text-xl" />
-        </a>
+          <MaterialIcon name="help" className="text-xl" />
+        </Link>
         <a
           href="/cart"
           className="w-11 h-11 flex items-center justify-center rounded-full bg-canvas"

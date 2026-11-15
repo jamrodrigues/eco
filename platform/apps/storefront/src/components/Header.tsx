@@ -182,8 +182,8 @@ export default function Header() {
             </span>
           )}
         </Link>
-        <Link href="/chat">
-          <MaterialIcon name="chat_bubble" className="text-xl" />
+        <Link href="/institucional/central-de-ajuda">
+          <MaterialIcon name="help" className="text-xl" />
         </Link>
       </div>
     </header>

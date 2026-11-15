@@ -24,7 +24,7 @@ export interface BrandConfig {
    * `icon` e o nome do icone no catalogo Material Symbols
    * (fonts.google.com/icons), renderizado via <MaterialIcon>.
    */
-  serviceShortcuts?: { icon: string; label: string }[]
+  serviceShortcuts?: { icon: string; label: string; href: string }[]
   /**
    * Dados legais/institucionais — opcionais. Quando ausentes (ex: branch
    * `main`, white-label genérico) o Footer não renderiza o bloco legal.
@@ -59,12 +59,12 @@ export const brandConfig: BrandConfig = {
   },
   logoImagePath: "/icons/vruumoto-wordmark-white.png",
   serviceShortcuts: [
-    { icon: "link", label: "Kit Relação" },
-    { icon: "tire_repair", label: "Pneus & Câmaras" },
-    { icon: "sports_motorsports", label: "Capacetes & Jaquetas" },
-    { icon: "oil_barrel", label: "Óleos & Filtros" },
-    { icon: "album", label: "Freios" },
-    { icon: "two_wheeler", label: "Entrega Expressa Motoboy" },
+    { icon: "link", label: "Kit Relação", href: "/busca?q=kit%20rela%C3%A7%C3%A3o" },
+    { icon: "tire_repair", label: "Pneus & Câmaras", href: "/busca?categoria=pneus-%26-c%C3%A2maras" },
+    { icon: "sports_motorsports", label: "Capacetes & Jaquetas", href: "/busca?categoria=capacetes-%26-jaquetas" },
+    { icon: "oil_barrel", label: "Óleos & Filtros", href: "/busca?categoria=%C3%B3leos-%26-filtros" },
+    { icon: "album", label: "Freios", href: "/busca?q=freio" },
+    { icon: "two_wheeler", label: "Entrega Expressa Motoboy", href: "/institucional/entrega" },
   ],
   legalName: "Vrumm Motos",
   cnpj: "69.233.612/0001-20",

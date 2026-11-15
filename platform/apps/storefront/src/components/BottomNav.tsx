@@ -3,8 +3,8 @@ import MaterialIcon from "./MaterialIcon"
 
 const tabs = [
   { icon: "home", label: "Início", href: "/" },
-  { icon: "movie", label: "Vídeo", href: "/video" },
-  { icon: "live_tv", label: "Live", href: "/live" },
+  { icon: "search", label: "Busca", href: "/busca" },
+  { icon: "shopping_cart", label: "Carrinho", href: "/cart" },
   { icon: "account_circle", label: "Eu", href: "/conta" },
 ]
 
