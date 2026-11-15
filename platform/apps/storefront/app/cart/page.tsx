@@ -7,6 +7,7 @@ import Header from "@/components/Header"
 import VariantSwap from "@/components/VariantSwap"
 import MaterialIcon from "@/components/MaterialIcon"
 import { formatBRL } from "@/lib/medusa"
+import { brandConfig } from "@/config/brand.config"
 import {
   type Cart,
   type BrPricing,
@@ -177,9 +178,11 @@ export default function CartPage() {
         <div className="bg-surface border border-black/[.09] rounded overflow-hidden">
           <div className="px-4 py-3 bg-canvas border-b border-black/[.09] flex items-center gap-2 text-sm">
             <input type="checkbox" checked readOnly />
-            <span className="bg-badgeOfficial text-white text-[10px] font-bold px-1.5 py-0.5 rounded">
-              OFICIAL
-            </span>
+            {brandConfig.features.showOfficialBadge && (
+              <span className="bg-badgeOfficial text-white text-[10px] font-bold px-1.5 py-0.5 rounded">
+                {brandConfig.officialBadgeLabel}
+              </span>
+            )}
             <span className="font-semibold">{SELLER_NAME}</span>
             <span className="text-textSecondary flex items-center gap-1">
               | <MaterialIcon name="chat_bubble" className="text-xs" /> Conversar
