@@ -7,15 +7,22 @@
  *
  * ATENÇÃO: productService.updateProducts SUBSTITUI o metadata inteiro do
  * produto — por isso sempre espalhamos o metadata existente antes de gravar.
+ *
+ * ATENÇÃO 2: buscar o pedido via query.graph com o campo "items.quantity" NÃO
+ * funciona — esse campo é calculado pelo próprio Order Module e vem undefined
+ * por essa via (confirmado contra o backend real: 3 pedidos "processados" sem
+ * erro, mas sold_count ficou em 0). Por isso o pedido é buscado via
+ * orderService.retrieveOrder(id, { relations: ["items"] }), que resolve
+ * status/metadata/items.quantity corretamente.
  */
 
 export type SoldCountDeps = {
-  query: { graph: Function }
   productService: {
     retrieveProduct(id: string): Promise<any>
     updateProducts(id: string, data: any): Promise<any>
   }
   orderService: {
+    retrieveOrder(id: string, config?: any): Promise<any>
     updateOrders(data: any): Promise<any>
   }
 }
@@ -26,12 +33,9 @@ export async function applySoldCount(
   deps: SoldCountDeps,
   orderId: string
 ): Promise<SoldCountResult> {
-  const { data: orders } = await deps.query.graph({
-    entity: "order",
-    filters: { id: orderId },
-    fields: ["id", "status", "metadata", "items.product_id", "items.quantity"],
+  const order = await deps.orderService.retrieveOrder(orderId, {
+    relations: ["items"],
   })
-  const order = orders?.[0]
   if (!order) return { updated: [], skipped: true }
 
   if (order.metadata?.sold_counted === true || order.status === "canceled") {

@@ -25,7 +25,7 @@ export default async function backfillSoldCount({ container }: ExecArgs) {
   for (const order of orders) {
     try {
       const result = await applySoldCount(
-        { query, productService, orderService },
+        { productService, orderService },
         order.id
       )
       if (result.skipped) skippedOrders++

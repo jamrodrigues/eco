@@ -1,5 +1,5 @@
 import type { SubscriberArgs, SubscriberConfig } from "@medusajs/framework"
-import { ContainerRegistrationKeys, Modules } from "@medusajs/framework/utils"
+import { Modules } from "@medusajs/framework/utils"
 import { applySoldCount } from "../modules/product-stats/sold-count"
 
 /**
@@ -12,7 +12,6 @@ export default async function orderPlacedSoldCountHandler({
 }: SubscriberArgs<{ id: string }>) {
   await applySoldCount(
     {
-      query: container.resolve(ContainerRegistrationKeys.QUERY),
       productService: container.resolve(Modules.PRODUCT) as any,
       orderService: container.resolve(Modules.ORDER) as any,
     },

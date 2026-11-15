@@ -2,9 +2,6 @@ import { applySoldCount } from "../sold-count"
 
 function makeDeps(order: any, productMetadata: Record<string, any> = {}) {
   const deps = {
-    query: {
-      graph: jest.fn().mockResolvedValue({ data: order ? [order] : [] }),
-    },
     productService: {
       retrieveProduct: jest.fn().mockImplementation(async (id: string) => ({
         id,
@@ -13,6 +10,7 @@ function makeDeps(order: any, productMetadata: Record<string, any> = {}) {
       updateProducts: jest.fn().mockResolvedValue({}),
     },
     orderService: {
+      retrieveOrder: jest.fn().mockResolvedValue(order),
       updateOrders: jest.fn().mockResolvedValue({}),
     },
   }
@@ -40,6 +38,9 @@ describe("applySoldCount", () => {
 
     const result = await applySoldCount(deps as any, "order_1")
 
+    expect(deps.orderService.retrieveOrder).toHaveBeenCalledWith("order_1", {
+      relations: ["items"],
+    })
     expect(result).toEqual({ updated: ["prod_1"], skipped: false })
     expect(deps.productService.updateProducts).toHaveBeenCalledTimes(1)
     expect(deps.productService.updateProducts).toHaveBeenCalledWith("prod_1", {
