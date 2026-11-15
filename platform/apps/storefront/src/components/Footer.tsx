@@ -1,6 +1,8 @@
 import Link from "next/link"
 import { brandConfig } from "@/config/brand.config"
 import MaterialIcon from "./MaterialIcon"
+import SiteQrCanvas from "./SiteQrCanvas"
+import InstallAppButton from "./InstallAppButton"
 
 const ATENDIMENTO = [
   { label: "Central de Ajuda", slug: "central-de-ajuda" },
@@ -22,6 +24,7 @@ const SOBRE = [
 ]
 const PAGAMENTOS = ["Pix", "Visa", "Mastercard", "Elo", "Boleto", "Carteira Digital"]
 const SELOS = ["Site Seguro SSL", "Dados Criptografados", "Compra Garantida"]
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://vruumoto.com.br"
 
 export default function Footer() {
   return (
@@ -81,11 +84,10 @@ export default function Footer() {
 
         <div>
           <h3 className="font-bold text-textPrimary mb-3">Baixe o App</h3>
-          <div className="w-24 h-24 bg-canvas border border-black/[.09] rounded flex items-center justify-center text-[10px] text-textSecondary text-center p-1">
-            QR Code do App
-          </div>
+          <SiteQrCanvas url={siteUrl} size={96} />
+          <InstallAppButton />
           <p className="text-xs text-textSecondary mt-2">
-            Escaneie para baixar o app {brandConfig.storeName}
+            Escaneie para abrir a loja no celular ou instale como app
           </p>
         </div>
       </div>
