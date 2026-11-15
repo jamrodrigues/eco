@@ -233,7 +233,7 @@ export default function PdpClient({ product }: { product: ProductDetail }) {
       </div>
 
       <div className="mt-8 space-y-4">
-        <SpecsTable description={product.description} />
+        <SpecsTable product={product} selectedVariant={selectedVariant} stock={stock} />
         <ReviewsBlock />
       </div>
 

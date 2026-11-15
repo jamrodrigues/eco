@@ -61,6 +61,13 @@ export type ProductDetail = {
   options: ProductOption[]
   metadata?: { sold_count?: number; review_count?: number; review_avg?: number } | null
   variants: ProductVariantDetail[]
+  categories?: { id: string; name: string; handle: string }[]
+  weight?: number | null
+  length?: number | null
+  width?: number | null
+  height?: number | null
+  material?: string | null
+  origin_country?: string | null
 }
 
 export async function medusaFetch<T>(path: string, init?: RequestInit): Promise<T> {
@@ -143,6 +150,15 @@ const PRODUCT_DETAIL_FIELDS = [
   "description",
   "thumbnail",
   "metadata",
+  "weight",
+  "length",
+  "width",
+  "height",
+  "material",
+  "origin_country",
+  // `*categories` e nao `categories.name`: a forma com subcampo nao retorna
+  // categorias nesta versao do Medusa (verificado com curl no produto real).
+  "*categories",
   "images.url",
   "options.id",
   "options.title",

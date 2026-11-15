@@ -20,6 +20,8 @@ export interface BrandConfig {
   }
   /** Opcional — quando ausente, o Header mostra o storeName em texto. */
   logoImagePath?: string
+  /** Opcional — cidade/UF de origem do envio, exibida na ficha técnica ("Envio de"). */
+  shipsFromLabel?: string
   /**
    * Opcional — quando ausente, ServiceShortcuts usa a lista genérica.
    * `icon` e o nome do icone no catalogo Material Symbols
@@ -60,6 +62,7 @@ export const brandConfig: BrandConfig = {
     showOfficialBadge: false,
   },
   logoImagePath: "/icons/vruumoto-wordmark-white.png",
+  shipsFromLabel: "Satuba - AL",
   serviceShortcuts: [
     { icon: "link", label: "Kit Relação", href: "/busca?q=kit%20rela%C3%A7%C3%A3o" },
     { icon: "tire_repair", label: "Pneus & Câmaras", href: "/busca?categoria=pneus-%26-c%C3%A2maras" },
