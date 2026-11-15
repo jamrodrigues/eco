@@ -143,6 +143,21 @@ export async function getInstitutionalPage(slug: string) {
   )
 }
 
+export type FlashSale =
+  | { active: false }
+  | { active: true; title: string; ends_at: string; product_ids: string[] }
+
+/**
+ * Oferta relampago ativa (price list nativa tipo Sale dentro do periodo).
+ * Qualquer falha (404 se a rota ainda nao existe no backend, 500, rede) vira
+ * "sem oferta" para nao quebrar a home.
+ */
+export async function getFlashSale(): Promise<FlashSale> {
+  return medusaFetch<FlashSale>("/store/flash-sale").catch(
+    (): FlashSale => ({ active: false })
+  )
+}
+
 const PRODUCT_DETAIL_FIELDS = [
   "id",
   "title",

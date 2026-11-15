@@ -6,21 +6,25 @@ function pad(n: number) {
   return String(n).padStart(2, "0")
 }
 
+function remainingMs(endsAt: string) {
+  return Math.max(0, Date.parse(endsAt) - Date.now())
+}
+
 /**
  * Isolado em seu proprio componente de folha: o setInterval atualiza
  * apenas este state local, nao o componente pai (secao 5 do doc da
  * Fase 2 — sem re-renderizacoes desnecessarias na pagina).
+ * Conta ate o instante real `endsAt`; ao chegar em zero fica em 00:00:00.
  */
-export default function FlashSaleCountdown({ durationMs }: { durationMs: number }) {
-  const [remaining, setRemaining] = useState(durationMs)
+export default function FlashSaleCountdown({ endsAt }: { endsAt: string }) {
+  const [remaining, setRemaining] = useState(() => remainingMs(endsAt))
 
   useEffect(() => {
-    const endsAt = Date.now() + durationMs
-    const id = setInterval(() => {
-      setRemaining(Math.max(0, endsAt - Date.now()))
-    }, 1000)
+    const tick = () => setRemaining(remainingMs(endsAt))
+    tick()
+    const id = setInterval(tick, 1000)
     return () => clearInterval(id)
-  }, [durationMs])
+  }, [endsAt])
 
   const totalSeconds = Math.floor(remaining / 1000)
   const h = Math.floor(totalSeconds / 3600)
