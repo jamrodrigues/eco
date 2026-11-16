@@ -108,6 +108,9 @@ module.exports = defineConfig({
       resolve: "./src/modules/institutional-pages",
     },
     {
+      resolve: "./src/modules/product-reviews",
+    },
+    {
       resolve: "./src/modules/store-coins",
     },
     {
