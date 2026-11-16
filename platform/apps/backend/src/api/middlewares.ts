@@ -42,5 +42,10 @@ export default defineMiddlewares({
       matcher: '/store/customers/me/password',
       middlewares: [authenticate('customer', ['bearer'])],
     },
+    {
+      method: ['POST'],
+      matcher: '/store/products/:id/reviews',
+      middlewares: [authenticate('customer', ['bearer'])],
+    },
   ],
 })
