@@ -234,7 +234,7 @@ export default function PdpClient({ product }: { product: ProductDetail }) {
 
       <div className="mt-8 space-y-4">
         <SpecsTable product={product} selectedVariant={selectedVariant} stock={stock} />
-        <ReviewsBlock />
+        <ReviewsBlock productId={product.id} />
       </div>
 
       {/* Mobile fixed action bar */}

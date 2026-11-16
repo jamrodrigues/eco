@@ -264,6 +264,63 @@ export async function getProductByHandle(handle: string) {
   return product
 }
 
+export type StoreReview = {
+  id: string
+  author_name: string
+  rating: number
+  title: string | null
+  body: string
+  verified_purchase: boolean
+  created_at: string
+}
+
+export type ReviewSummary = {
+  review_count: number
+  review_avg: number
+  by_rating: Record<string, number>
+}
+
+/** Lista só avaliações aprovadas. `rating` filtra por nota exata (1-5). */
+export async function getProductReviews(
+  productId: string,
+  opts: { rating?: number; limit?: number; offset?: number } = {}
+): Promise<{ reviews: StoreReview[]; count: number; summary: ReviewSummary }> {
+  const params = new URLSearchParams()
+  if (opts.rating !== undefined) params.set("rating", String(opts.rating))
+  if (opts.limit !== undefined) params.set("limit", String(opts.limit))
+  if (opts.offset !== undefined) params.set("offset", String(opts.offset))
+  const qs = params.toString()
+  return medusaFetch(`/store/products/${productId}/reviews${qs ? `?${qs}` : ""}`)
+}
+
+/**
+ * Envia avaliação de cliente logado (fica pendente até moderação). Não engole
+ * erro: em HTTP de erro lança Error com a `message` do backend e a propriedade
+ * `status` preenchida, para o componente decidir a mensagem (ex: 409 = já avaliou).
+ */
+export async function postProductReview(
+  productId: string,
+  token: string,
+  body: { rating: number; title?: string; body: string }
+): Promise<void> {
+  const res = await fetch(`${BACKEND_URL}/store/products/${productId}/reviews`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "x-publishable-api-key": PUBLISHABLE_KEY,
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(body),
+    cache: "no-store",
+  })
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}))
+    throw Object.assign(new Error(data.message || `Erro ${res.status}`), {
+      status: res.status,
+    })
+  }
+}
+
 export function formatBRL(cents: number) {
   return (cents / 100).toLocaleString("pt-BR", {
     style: "currency",
